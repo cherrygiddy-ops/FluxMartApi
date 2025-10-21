@@ -146,7 +146,7 @@
                 <artifactId>flyway-maven-plugin</artifactId>
                 <version>10.12.0</version> <!-- ✅ Downgrade here -->
                 <configuration>
-                    <url>jdbc:mysql://localhost:3306/sql-store?createDatabaseIfNotExist=true</url>
+                    <url>jdbc:mysql://localhost:3306/sql_store?createDatabaseIfNotExist=true</url>
                     <user>root</user>
                     <password>Kimz@9600</password>
                     <cleanDisabled>false</cleanDisabled>
