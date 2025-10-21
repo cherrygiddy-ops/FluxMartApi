@@ -12,14 +12,11 @@ import org.springframework.web.bind.annotation.RestController;
 @AllArgsConstructor
 @RequestMapping("/categories")
 public class CategoriesController {
-
-    private final  CategoryMapper mapper;
-    private final CategoryRepository categoryRepository;
+    private final CategoryService service;
 
     @PostMapping
     public ResponseEntity<?> addCategory(@RequestBody CategoryRequestDto requestDto){
-      var categoryEntity = mapper.toEntity(requestDto);
-      categoryRepository.save(categoryEntity);
+        service.addCategory(requestDto);
       return ResponseEntity.ok(HttpStatus.CREATED);
     }
 }

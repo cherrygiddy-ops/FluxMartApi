@@ -11,73 +11,55 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Set;
 
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/products")
 public class ProductsController {
-
-    private final CategoryRepository categoryRepository;
-    private final ProductsMapper productsMapper;
-    private final ProductsRepository productsRepository;
-
+   // private final ProductsMapper productsMapper;
+    private final ProductService productService;
 
     @PostMapping
     public ResponseEntity<?>  addProduct(@Valid @RequestBody ProductsRequestDto requestDto){
-    //validate category
-        var category = categoryRepository.findById(requestDto.getCategoryId()).orElse(null);
-        if (category == null)
-            return ResponseEntity.badRequest().body("Cannot find the requested Category");
-        var product= productsMapper.toEntity(requestDto);
-        product.setCategory(category);
-
-        productsRepository.save(product);
-
-        return ResponseEntity.ok(product);
+       var response= productService.addProduct(requestDto);
+       return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
     @GetMapping("/{productId}")
-    public ResponseEntity<ProductsResponseDto> getProductDetails (@PathVariable(name = "productId") Integer id) {
-        var product = productsRepository.findById(id).orElseThrow(() -> new ProductNotFoundException("product not found"));
-        var responsedto = productsMapper.toDto(product);
-        return ResponseEntity.ok(responsedto);
+    public ProductsResponseDto getProductDetails (@PathVariable(name = "productId") Integer id) {
+      return productService.getProductsDetails(id);
     }
-
 
     @GetMapping()
-    public ResponseEntity<?> getALLProducts (@RequestParam(name = "sort", required = false,defaultValue = "") String sortBy){
-       if (!Set.of("categoryId","name","price").contains(sortBy))
-           sortBy= "name";
-    var products = productsRepository.findAll(Sort.by(sortBy).descending()).stream().map(productsMapper::toDto).toList();
-    return ResponseEntity.ok(products);
+    public List<ProductsResponseDto> getALLProducts (@RequestParam(name = "sort", required = false,defaultValue = "") String sortBy){
+        return productService.getAllProducts(sortBy);
     }
+
     @GetMapping("/pages")
-    public ResponseEntity<?> getPaginatedProducts (@RequestParam(name = "pageSize") Byte pageSize,@RequestParam(name = "pageNumber") Byte pageNumber){
-        var pageRequest = PageRequest.of(pageNumber,pageSize);
-        var products = productsRepository.findAll(pageRequest).stream().map(productsMapper::toDto).toList();
-        return ResponseEntity.ok(products);
+    public List<ProductsResponseDto> getPaginatedProducts (@RequestParam(name = "pageSize") Byte pageSize, @RequestParam(name = "pageNumber") Byte pageNumber){
+        return productService.getPaginatedProducts(pageSize,pageNumber);
     }
 
     @DeleteMapping("/{productId}")
     public ResponseEntity<?> deleteProduct(@PathVariable(name = "productId") Integer id){
-
-        var product= productsRepository.findById(id).orElse(null);
-        if (product== null)
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Product not Found");
-        productsRepository.delete(product);
+        productService.deleteProduct(id);
         return ResponseEntity.noContent().build();
     }
 
     @PutMapping("/{productId}")
-    public ResponseEntity<?> updateProduct(@PathVariable(name = "productId") Integer id,@RequestBody UpdateProductRequest request){
-        var category = categoryRepository.findById(request.getCategoryId()).orElse(null);
-        if (category==null) return ResponseEntity.notFound().build();
-        var product = productsRepository.findById(id).orElse(null);
-        if (product==null) return ResponseEntity.notFound().build();
-
-        productsMapper.updateProduct(request,product);
-       product.setCategory(category);
-        productsRepository.save(product);
-        return ResponseEntity.ok(productsMapper.toDto(product));
+    public ProductsResponseDto updateProduct(@PathVariable(name = "productId") Integer id,@RequestBody UpdateProductRequest request){
+        return productService.updateProduct(id,request);
     }
+
+    @ExceptionHandler(ProductNotFoundException.class)
+    public ResponseEntity<?> handleProductNotFound() {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("product not found");
+    }
+
+    @ExceptionHandler(CategoryNotFoundException.class)
+    public ResponseEntity<?> handleCategoryNotFound() {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("category not found");
+    }
+
 }
