@@ -1,23 +1,25 @@
 package com.fluxmartApi.products;
 
+import com.fluxmartApi.cart.CartItemsEntity;
 import com.fluxmartApi.categories.CategoryEntity;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.math.BigDecimal;
+import java.util.LinkedHashSet;
+import java.util.Set;
+
 @Setter
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity()
 @Table(name = "products")
+@ToString
 public class ProductsEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "product_id")
+    @Column(name = "id")
     private Integer id;
 
     @Column(name = "name")

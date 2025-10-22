@@ -6,7 +6,6 @@ import lombok.Data;
 import java.math.BigDecimal;
 
 @Data
-@AllArgsConstructor
 public class ProductsResponseDto {
     private Integer id;
     private String name;
