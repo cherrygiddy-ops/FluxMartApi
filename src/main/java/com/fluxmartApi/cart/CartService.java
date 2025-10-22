@@ -24,11 +24,32 @@ public class CartService {
        return cartMapper.toDto(cart);
     }
 
-    public CartItemsDto addToCart(UUID cartId, AddToCartRequest request){
+    public CartItemsDto addToCart(UUID cartId, Integer productId){
         var cart = cartRepository.fetchCartWithItems(cartId).orElseThrow(CartNotFoundException::new);
-        var product =productsRepository.findById(request.getProductId()).orElseThrow(ProductNotFoundException::new);
-        var cartItem = cart.getCartItemsEntity(product);
+        var product =productsRepository.findById(productId).orElseThrow(ProductNotFoundException::new);
+        var cartItem = cart.updateOrAddCartItem(product);
         cartRepository.save(cart);
         return cartMapper.toDto(cartItem);
+    }
+
+    public void deleteCartItem(UUID cartId, Integer productId) {
+        var cart = cartRepository.fetchCartWithItems(cartId).orElseThrow(CartNotFoundException::new);
+        cart.removeFromCart(productId);
+        cartRepository.save(cart);
+    }
+
+    public CartItemsDto updateCartItem(UUID cartId, Integer productId,int quantity) {
+        var cart = cartRepository.fetchCartWithItems(cartId).orElseThrow(CartNotFoundException::new);
+        var cartItem = cart.getCartItems(productId);
+        if (cartItem == null)throw new ProductNotFoundException();
+        cartItem.setQuantity(quantity);
+        cartRepository.save(cart);
+        return cartMapper.toDto(cartItem);
+    }
+
+    public void clearCart(UUID cartId) {
+        var cart = cartRepository.fetchCartWithItems(cartId).orElseThrow(CartNotFoundException::new);
+        cart.clearCart();
+        cartRepository.save(cart);
     }
 }

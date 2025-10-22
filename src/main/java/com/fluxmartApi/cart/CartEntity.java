@@ -28,21 +28,28 @@ public class CartEntity {
     @Column(name = "created_at",insertable = false,updatable = false)
     private Date createdAt;
 
-    @OneToMany(mappedBy = "cart",cascade = CascadeType.MERGE)
+    @OneToMany(mappedBy = "cart",cascade = CascadeType.MERGE,orphanRemoval = true)
     @ToString.Exclude
     private Set<CartItemsEntity> items = new LinkedHashSet<>();
 
     public void  addToCart(CartItemsEntity cartItem){
         items.add(cartItem);
     }
-    public void  removeFromCart(CartItemsEntity cartItem){
-        items.remove(cartItem);
+    public void  removeFromCart(int productId){
+       var cartItem = getCartItems(productId);
+       if (cartItem != null){
+           items.remove(cartItem);
+           cartItem.setCart(null);
+       }
     }
-    public   CartItemsEntity filterCartItems(int productId) {
+    public void clearCart(){
+        items.clear();
+    }
+    public   CartItemsEntity getCartItems(int productId) {
        return items.stream().filter(carti->carti.getProduct().getId().equals(productId)).findFirst().orElse(null);
     }
-    public   CartItemsEntity getCartItemsEntity(ProductsEntity product) {
-        var cartItem= filterCartItems(product.getId());
+    public   CartItemsEntity updateOrAddCartItem(ProductsEntity product) {
+        var cartItem= getCartItems(product.getId());
         if (cartItem != null){
             cartItem.setQuantity(cartItem.getQuantity()+1);
         }else {

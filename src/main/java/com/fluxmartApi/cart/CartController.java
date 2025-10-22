@@ -29,10 +29,29 @@ public class CartController {
 
     @PostMapping("/{cartId}/items")
     public ResponseEntity<?> addToCart(@PathVariable("cartId") UUID cartId,@Valid @RequestBody AddToCartRequest request){
-        var response= cartService.addToCart(cartId,request);
+        var response= cartService.addToCart(cartId,request.getProductId());
         System.out.println(response);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
+
+    @PutMapping("/{cartId}/items/{productId}")
+    public ResponseEntity<?>updateCartItem(@PathVariable("cartId") UUID cartId,@PathVariable("productId")Integer productd,@RequestBody UpdateCartItemRequest request){
+        var response=cartService.updateCartItem(cartId,productd,request.getQuantity());
+        return ResponseEntity.ok().body(response);
+    }
+
+    @DeleteMapping("/{cartId}/items/{productId}")
+    public ResponseEntity<?>deleteCartItem(@PathVariable("cartId") UUID cartId,@PathVariable("productId")Integer productd){
+        cartService.deleteCartItem(cartId,productd);
+        return ResponseEntity.status(HttpStatus.GONE).body("Product Deleted");
+    }
+
+    @DeleteMapping("/{cartId}/items")
+    public ResponseEntity<?>clearCart(@PathVariable("cartId") UUID cartId){
+        cartService.clearCart(cartId);
+        return ResponseEntity.ok().body("Cart Cleared");
+    }
+
 
     @ExceptionHandler(CartNotFoundException.class)
     public ResponseEntity<?> handleCartNotFound() {
