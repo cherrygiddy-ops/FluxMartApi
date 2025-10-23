@@ -1,6 +1,5 @@
 package com.fluxmartApi.auth;
 
-import com.fluxmartApi.products.ProductNotFoundException;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -15,11 +14,20 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/auth")
 public class LoginController {
     private AuthenticationManager authenticationManager;
+    private final JwtService service;
 
     @PostMapping("/login")
-    public void login(@Valid  @RequestBody LoginRequestDto requestDto){
+    public ResponseEntity<JwtResponseDto> login(@Valid  @RequestBody LoginRequestDto requestDto){
         authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(requestDto.getEmail(),requestDto.getPassword()));
+        var token =service.generateTokens(requestDto.getEmail());
 
+        return ResponseEntity.ok().body(new JwtResponseDto(token));
+    }
+
+    @PostMapping("/validate")
+    public boolean validateToken(@Valid  @RequestHeader("Authorization") String authHeader){
+        var token = authHeader.replace("Bearer ","");
+        return service.validateToken(token);
     }
 
     @ExceptionHandler(UserNotFoundException.class)
