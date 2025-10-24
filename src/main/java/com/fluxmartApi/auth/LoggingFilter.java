@@ -1,4 +1,4 @@
-package com.fluxmartApi.auth.filter;
+package com.fluxmartApi.auth;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;

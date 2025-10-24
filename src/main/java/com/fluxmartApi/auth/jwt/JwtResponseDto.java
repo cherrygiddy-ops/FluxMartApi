@@ -1,4 +1,4 @@
-package com.fluxmartApi.auth;
+package com.fluxmartApi.auth.jwt;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
