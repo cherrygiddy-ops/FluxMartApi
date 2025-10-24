@@ -37,27 +37,28 @@ public class LoginController {
         var token =service.generateAccessTokens(user);
         var refreshToken = service.generateRefreshTokens(user);
 
-        var cookie = new Cookie("refreshToken",refreshToken);
+        var cookie = new Cookie("refreshToken",refreshToken.toString());
         cookie.setSecure(true);
         cookie.setMaxAge(config.getRefreshExpiration());
         cookie.setPath("/auth/refresh");
 
         response.addCookie(cookie);
 
-        return ResponseEntity.ok().body(new JwtResponseDto(token));
+        return ResponseEntity.ok().body(new JwtResponseDto(token.toString()));
     }
 
     @PostMapping("/refresh")
     public ResponseEntity<?> refreshToken(@CookieValue (value = "refreshToken") String refreshToken){
-        if (!service.validateToken(refreshToken))
+        var jwt = service.parseToken(refreshToken);
+        if (jwt==null || jwt.isExpired())
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid Refresh token");
-       var userId =service.getUserIdFromToken(refreshToken);
+       var userId = jwt.getUserId();
        var user = userRepository.findById(userId).orElse(null);
        if (user == null)
            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Can not Find Said User");
        var token = service.generateAccessTokens(user);
 
-       return  ResponseEntity.ok(new JwtResponseDto(token));
+       return  ResponseEntity.ok(new JwtResponseDto(token.toString()));
     }
 
     @GetMapping("/currentUser")

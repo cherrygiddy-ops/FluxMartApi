@@ -1,44 +1,46 @@
 package com.fluxmartApi.auth.jwt;
 
 
+import com.fluxmartApi.users.Role;
 import com.fluxmartApi.users.UserEntity;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
-@AllArgsConstructor
+@RequiredArgsConstructor
 @Service
 public class JwtService {
  private final JwtConfig config;
 
-    public String generateAccessTokens(UserEntity entity){
+    public Jwt generateAccessTokens(UserEntity entity){
      return generateToken(entity, config.getAccessExpiration());
     }
 
-    public String generateRefreshTokens(UserEntity entity){
+    public Jwt generateRefreshTokens(UserEntity entity){
         return generateToken(entity, config.getRefreshExpiration());
     }
 
-    private String generateToken(UserEntity entity, int expiration) {
-        return Jwts.builder()
-                .subject(String.valueOf(entity.getId()))
-                .claim("name", entity.getUsername())
-                .claim("email", entity.getEmail())
+    private Jwt generateToken(UserEntity entity, int expiration) {
+        var claims = Jwts.claims().subject(entity.getId().toString())
+                .add("name",entity.getUsername())
+                .add("email",entity.getEmail())
+                .add("role",entity.getRole())
                 .expiration(new Date(System.currentTimeMillis() + 1000L * expiration))
                 .issuedAt(new Date())
-                .signWith(config.getSecretKey())
-                .compact();
+                .build();
+        return new Jwt(config.getSecretKey(), claims);
     }
 
-    public Boolean validateToken(String token){
-        try{
+    public Jwt  parseToken(String token){
+        try {
             var claims = getClaims(token);
-            return claims.getExpiration().after(new Date());
+           return new Jwt(config.getSecretKey(), claims);
         }catch (JwtException ex){
-            return false;
+            return null;
         }
     }
 
@@ -50,7 +52,5 @@ public class JwtService {
                   .getPayload();
     }
 
-    public Integer getUserIdFromToken(String token) {
-      return  Integer.parseInt(getClaims(token).getSubject());
-    }
+
 }
