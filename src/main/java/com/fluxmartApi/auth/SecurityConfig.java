@@ -1,5 +1,6 @@
 package com.fluxmartApi.auth;
 
+import com.fluxmartApi.auth.filter.JwtAuthenticationFilter;
 import com.fluxmartApi.common.SecurityRules;
 import com.fluxmartApi.users.UserDetailsServiceImpl;
 import lombok.AllArgsConstructor;
@@ -17,6 +18,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import java.util.List;
 
@@ -26,6 +28,7 @@ import java.util.List;
 public class SecurityConfig {
     private final List<SecurityRules> featureSecurityRules;
     private final UserDetailsServiceImpl userDetailsService;
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @Bean
     public SecurityFilterChain securityFilterChain (HttpSecurity http) throws Exception {
@@ -38,7 +41,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(c->{
                     featureSecurityRules.forEach(r->r.config(c));
                     c.anyRequest().authenticated();}
-                );
+                )
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
                             return http.build();
 
     }
