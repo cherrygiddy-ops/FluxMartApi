@@ -1,4 +1,4 @@
-package com.fluxmartApi.products;
+package com.fluxmartApi.admin;
 
 import com.fluxmartApi.common.SecurityRules;
 import com.fluxmartApi.users.Role;
@@ -8,12 +8,12 @@ import org.springframework.security.config.annotation.web.configurers.AuthorizeH
 import org.springframework.stereotype.Component;
 
 @Component
-public class ProductsSecurityRules implements SecurityRules {
+public class AdminSecurityRules implements SecurityRules {
     @Override
     public void config(AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry registry) {
-        registry.requestMatchers(HttpMethod.GET,"/products/**").permitAll();
-        registry.requestMatchers(HttpMethod.GET,"/products/{productId}").permitAll();
-        registry.requestMatchers(HttpMethod.GET,"/products/pages").permitAll();
-
+        registry.requestMatchers("/admin/users").hasRole(Role.ADMIN.name());
+        registry.requestMatchers(HttpMethod.POST,"/products/**").hasRole(Role.ADMIN.name());
+        registry.requestMatchers(HttpMethod.PUT,"/products/**").hasRole(Role.ADMIN.name());
+        registry.requestMatchers(HttpMethod.DELETE,"/products/**").hasRole(Role.ADMIN.name());
     }
 }

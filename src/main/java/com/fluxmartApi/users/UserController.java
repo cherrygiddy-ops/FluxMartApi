@@ -6,6 +6,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/users")
@@ -17,6 +19,7 @@ public class UserController {
        var response = userService.registerUser(requestDto);
        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
+
 
     @ExceptionHandler(UserExistsException.class)
     public ResponseEntity<?> handleUserNotFound() {

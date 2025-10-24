@@ -30,13 +30,14 @@ public class LoginController {
 
     @PostMapping("/login")
     public ResponseEntity<JwtResponseDto> login(@Valid  @RequestBody LoginRequestDto requestDto, HttpServletResponse response){
+        System.out.println(requestDto.getEmail());
         authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(requestDto.getEmail(),requestDto.getPassword()));
 
-        var user =userRepository.findByEmail(requestDto.getEmail()).orElseThrow();
+        var user =userRepository.findByEmail(requestDto.getEmail()).orElseThrow(UserNotFoundException::new);
         var token =service.generateAccessTokens(user);
-        var refresh = service.generateRefreshTokens(user);
+        var refreshToken = service.generateRefreshTokens(user);
 
-        var cookie = new Cookie("refreshToken",refresh);
+        var cookie = new Cookie("refreshToken",refreshToken);
         cookie.setSecure(true);
         cookie.setMaxAge(config.getRefreshExpiration());
         cookie.setPath("/auth/refresh");
@@ -46,11 +47,17 @@ public class LoginController {
         return ResponseEntity.ok().body(new JwtResponseDto(token));
     }
 
-    @PostMapping("/validate")
-    public boolean validateToken(@Valid  @RequestHeader("Authorization") String authHeader){
-        System.out.println("validator is called");
-        var token = authHeader.replace("Bearer ","");
-        return service.validateToken(token);
+    @PostMapping("/refresh")
+    public ResponseEntity<?> refreshToken(@CookieValue (value = "refreshToken") String refreshToken){
+        if (!service.validateToken(refreshToken))
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid Refresh token");
+       var userId =service.getUserIdFromToken(refreshToken);
+       var user = userRepository.findById(userId).orElse(null);
+       if (user == null)
+           return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Can not Find Said User");
+       var token = service.generateAccessTokens(user);
+
+       return  ResponseEntity.ok(new JwtResponseDto(token));
     }
 
     @GetMapping("/currentUser")
