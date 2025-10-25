@@ -14,7 +14,7 @@ public class UserService  {
     private final PasswordEncoder passwordEncoder;
 
 
-    public UserResponseDto registerUser(UserRequestDto requestDto)  {
+    public UserResponseDto registerUser(UserRegistrationRequestDto requestDto)  {
         if (userRepository.existsByEmail(requestDto.getEmail()))
             throw new UserExistsException();
         var user = userMapper.toEntity(requestDto);
