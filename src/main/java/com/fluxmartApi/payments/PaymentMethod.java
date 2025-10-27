@@ -1,4 +1,4 @@
-package com.fluxmartApi.order;
+package com.fluxmartApi.payments;
 
 import jakarta.persistence.*;
 import lombok.Getter;

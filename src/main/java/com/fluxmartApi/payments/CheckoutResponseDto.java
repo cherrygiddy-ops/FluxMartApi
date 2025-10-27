@@ -1,4 +1,4 @@
-package com.fluxmartApi.checkout;
+package com.fluxmartApi.payments;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

@@ -1,11 +1,11 @@
 package com.fluxmartApi.order;
 
 import com.fluxmartApi.cart.CartEntity;
+import com.fluxmartApi.payments.PaymentMethod;
 import com.fluxmartApi.users.UserEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-import lombok.ToString;
 
 import java.math.BigDecimal;
 import java.sql.Date;
@@ -32,7 +32,7 @@ public class OrderEntity {
 
     @Column(name = "status")
     @Enumerated(EnumType.STRING)
-    private Status status;
+    private PaymentStatus paymentStatus;
 
     @Column(name = "comments")
     private String comments;
@@ -63,7 +63,7 @@ public class OrderEntity {
         order.setComments("order 1");
         order.setTotalPrice(cart.getTotalPrice());
         order.setCustomer(customer);
-        order.setStatus(Status.PENDING);
+        order.setPaymentStatus(PaymentStatus.PENDING);
 
         cart.getItems().stream().forEach(cartI -> {
                     var orderItem = new OrderItemsEntity(order,cartI.getProduct(),cartI.getQuantity());

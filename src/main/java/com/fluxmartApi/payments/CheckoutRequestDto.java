@@ -1,4 +1,4 @@
-package com.fluxmartApi.checkout;
+package com.fluxmartApi.payments;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
