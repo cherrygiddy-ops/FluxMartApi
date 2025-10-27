@@ -28,7 +28,7 @@ import java.util.List;
 @AllArgsConstructor
 public class SecurityConfig {
     private final List<SecurityRules> featureSecurityRules;
-    private final UserDetailsServiceImpl userDetailsService;
+    //private final UserDetailsServiceImpl userDetailsService;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @Bean
@@ -59,13 +59,13 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
-    @Bean
-    public AuthenticationProvider authenticationProvider(){
-        var provider = new DaoAuthenticationProvider();
-        provider.setPasswordEncoder(passwordEncoder());
-        provider.setUserDetailsService(userDetailsService);
-        return provider;
-    }
+//    @Bean
+//    public AuthenticationProvider authenticationProvider(){
+//        var provider = new DaoAuthenticationProvider();
+//        provider.setPasswordEncoder(passwordEncoder());
+//        provider.setUserDetailsService(userDetailsService);
+//        return provider;
+//    }
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
