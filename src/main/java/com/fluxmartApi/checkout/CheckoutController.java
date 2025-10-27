@@ -4,6 +4,7 @@ import com.fluxmartApi.auth.UserNotFoundException;
 import com.fluxmartApi.cart.CartNotFoundException;
 import com.fluxmartApi.order.CartEmptyException;
 import com.fluxmartApi.order.OrderService;
+import com.stripe.exception.StripeException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,8 +16,14 @@ import org.springframework.web.bind.annotation.*;
 public class CheckoutController {
     private final CheckOutService checkOutService;
     @PostMapping()
-    public CheckoutResponseDto checkout(@RequestBody CheckoutRequestDto requestDto){
-        return checkOutService.placeOrder(requestDto.getCartId());
+    public ResponseEntity<?> checkout(@RequestBody CheckoutRequestDto requestDto){
+        try {
+            var response= checkOutService.placeOrder(requestDto.getCartId());
+            return ResponseEntity.ok(response);
+        } catch (StripeException e) {
+            System.out.println(e.getMessage());
+          return   ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("could not create a session");
+        }
     }
 
     @ExceptionHandler(CartEmptyException.class)

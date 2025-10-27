@@ -51,7 +51,7 @@ public class OrderEntity {
     @OneToOne()
     private PaymentMethod paymentMethod;
 
-    @OneToMany(cascade = CascadeType.PERSIST, orphanRemoval = true,mappedBy = "order")
+    @OneToMany(cascade = {CascadeType.PERSIST,CascadeType.REMOVE} ,mappedBy = "order")
     private Set<OrderItemsEntity> orderItems = new LinkedHashSet<>();
 
     public void addItems(OrderItemsEntity item){
