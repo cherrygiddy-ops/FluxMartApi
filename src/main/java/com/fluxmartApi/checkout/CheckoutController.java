@@ -1,6 +1,5 @@
 package com.fluxmartApi.checkout;
 
-import com.fluxmartApi.auth.AuthService;
 import com.fluxmartApi.auth.UserNotFoundException;
 import com.fluxmartApi.cart.CartNotFoundException;
 import com.fluxmartApi.order.CartEmptyException;
@@ -8,17 +7,16 @@ import com.fluxmartApi.order.OrderService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/checkout")
 public class CheckoutController {
-    private final OrderService orderService;
+    private final CheckOutService checkOutService;
     @PostMapping()
     public CheckoutResponseDto checkout(@RequestBody CheckoutRequestDto requestDto){
-        return orderService.placeOrder(requestDto.getCartId());
+        return checkOutService.placeOrder(requestDto.getCartId());
     }
 
     @ExceptionHandler(CartEmptyException.class)

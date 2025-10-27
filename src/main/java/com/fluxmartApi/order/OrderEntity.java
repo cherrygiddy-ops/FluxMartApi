@@ -1,5 +1,6 @@
 package com.fluxmartApi.order;
 
+import com.fluxmartApi.cart.CartEntity;
 import com.fluxmartApi.users.UserEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -55,6 +56,22 @@ public class OrderEntity {
 
     public void addItems(OrderItemsEntity item){
         orderItems.add(item);
+    }
+
+    public static OrderEntity createOrder(CartEntity cart,UserEntity customer){
+        var order = new OrderEntity();
+        order.setComments("order 1");
+        order.setTotalPrice(cart.getTotalPrice());
+        order.setCustomer(customer);
+        order.setStatus(Status.PENDING);
+
+        cart.getItems().stream().forEach(cartI -> {
+                    var orderItem = new OrderItemsEntity(order,cartI.getProduct(),cartI.getQuantity());
+                    order.addItems(orderItem);
+                }
+        );
+
+        return order;
     }
 
 

@@ -3,6 +3,7 @@ package com.fluxmartApi.order;
 import com.fluxmartApi.products.ProductsEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
@@ -13,6 +14,7 @@ import java.math.BigDecimal;
 @Getter
 @Setter
 @ToString
+@NoArgsConstructor
 public class OrderItemsEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -37,4 +39,11 @@ public class OrderItemsEntity {
     private BigDecimal totalPrice;
 
 
+    public OrderItemsEntity(OrderEntity order, ProductsEntity product, Integer quantity) {
+        this.order =order;
+        this.product = product;
+        this.quantity=quantity;
+        this.unitPrice = product.getPrice();
+        this.totalPrice = product.getPrice().multiply(BigDecimal.valueOf(quantity));
+    }
 }
