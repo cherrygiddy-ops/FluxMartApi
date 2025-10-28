@@ -37,7 +37,7 @@ public class StripePaymentService implements PaymentGateway {
                     .setMode(SessionCreateParams.Mode.PAYMENT)
                     .setSuccessUrl(websiteUrl +"/checkout-success?orderId="+order.getOrderId())
                     .setCancelUrl(websiteUrl + "/checkout-cancel")
-                    .putMetadata("orderId",order.getOrderId().toString());
+                    .setPaymentIntentData(createPaymentIntentData(order));
             order.getOrderItems().forEach(item->{
                 var lineItem = createLineItem(item);
                 builder.addLineItem(lineItem);
@@ -79,8 +79,11 @@ public class StripePaymentService implements PaymentGateway {
         JsonObject dataObject = root.getAsJsonObject("data").getAsJsonObject("object");
 
         PaymentIntent intent = ApiResource.GSON.fromJson(dataObject, PaymentIntent.class);
-        System.out.println(intent);
         return  Integer.valueOf(intent.getMetadata().get("orderId"));
+    }
+
+    private static SessionCreateParams.PaymentIntentData createPaymentIntentData(OrderEntity order) {
+        return SessionCreateParams.PaymentIntentData.builder().putMetadata("orderId", order.getOrderId().toString()).build();
     }
 
     private static SessionCreateParams.LineItem createLineItem(OrderItemsEntity item) {
