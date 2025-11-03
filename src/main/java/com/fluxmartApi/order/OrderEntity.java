@@ -56,6 +56,7 @@ public class OrderEntity {
 
     public void addItems(OrderItemsEntity item){
         orderItems.add(item);
+        item.setOrder(this);
     }
 
     public static OrderEntity createOrder(CartEntity cart,UserEntity customer){

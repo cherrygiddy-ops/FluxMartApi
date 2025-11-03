@@ -16,5 +16,33 @@ stripe :
   secretKey : ${STRIPE_SECRET_KEY}
   webhooksecretkey: ${STRIPE_WEBHOOK_SECRET_KEY}
 
+mpesa:
+  daraja:
+    consumer-key: 0yuqvo3SOg371aGpp5nnu09QmsfUgEAiLhuxYZ5jbSR1KcGZ
+    consumer-secret: 3URznamZYjGqXqsMppxcVC9xKssWmFnpX3UIUlwlktdQnhgGqioqRd2ebCSfSJ1G
+    grant-type: client_credentials
+    oauthEndpoint: https://sandbox.safaricom.co.ke/oauth/v1/generate
+    registerUrlEndpoint: https://sandbox.safaricom.co.ke/mpesa/c2b/v1/registerurl
+    simulateTransactionEndpoint: https://sandbox.safaricom.co.ke/mpesa/c2b/v1/simulate
+    shortCode: 600999
+    confirmationURL: https://3fbd3d017af0.ngrok-free.app/m-pesa/confirmation
+    validationURL: https://3fbd3d017af0.ngrok-free.app/m-pesa/validation
+    responseType: Completed
+    transactionResultUrl: https://sandbox.safaricom.co.ke/mpesa/transactionstatus/v1/query
+    checkAccountBalanceUrl: https://sandbox.safaricom.co.ke/mpesa/accountbalance/v1/query
+    transactionReversalUrl: https://sandbox.safaricom.co.ke/mpesa/reversal/v1/request
+    stkPassKey: bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919
+    stkPushShortCode: 174379
+    stkPushRequestUrl: https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest
+    stkPushRequestCallbackUrl: https://3fbd3d017af0.ngrok-free.app/m-pesa/stk-transaction-result
+    lnmQueryRequestUrl: https://sandbox.safaricom.co.ke/mpesa/stkpushquery/v1/query
+    b2cTransactionEndpoint: https://sandbox.safaricom.co.ke/mpesa/b2c/v3/paymentrequest
+    b2cResultUrl: https://3fbd3d017af0.ngrok-free.app/m-pesa/transaction-result
+    b2cQueueTimeoutUrl: https://3fbd3d017af0.ngrok-free.app/m-pesa/b2c-queue-timeout
+    b2cInitiatorName: testapi
+    b2cInitiatorPassword: Safaricom123!!
+    securityCredentials: olXhRi8gZAHm1SqPTGKzPLDy6aEegM3tHfoE1q58lC11dADuI7dkR8V71TK9MP3R0w63xHxgwCAESWO0krCUjQXonA6TQksc2cLuuZKTLxY2SHux/kSSjtVffAEafmoWod2hGowLzadeLeSLf9WUelhDX+B6NzLH4FOTSavLuyObE2jESnSzNzJvaJejjvTiNpZat0DXYdw7n/uhBuT65EK17s8R626WQDdfGvvlpMJp1FycDz5Z8I5DmGH6ycuSMcByant9lYpO682fUyk7yBqof3P4GSiTP2Edy643bAXLGopX05nHwnqa4y4Et8Yy3ctt7rsPPH3WFSFgipx8rw==
+
+
 
 websiteUrl : http://localhost:4040

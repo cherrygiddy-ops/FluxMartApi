@@ -29,10 +29,16 @@ public class AuthService {
         var userId= (Integer)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
          return userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
     }
-    public Jwt getJwt(LoginRequestDto requestDto, HttpServletResponse response) {
+    public Jwt getJwt(LoginRequestDto requestDto, HttpServletResponse response) throws AccountNotVerifiedException {
         authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(requestDto.getEmail(), requestDto.getPassword()));
 
         var user =userRepository.findByEmail(requestDto.getEmail()).orElseThrow(UserNotFoundException::new);
+
+        if (!user.isVerified()) {
+            throw new AccountNotVerifiedException();
+        }
+
+
         var token =service.generateAccessTokens(user);
         var refreshToken = service.generateRefreshTokens(user);
 

@@ -62,7 +62,6 @@ public class ProductService {
         if (product==null) throw new ProductNotFoundException();
 
         productsMapper.updateProduct(request,product);
-        product.setCategory(category);
         productsRepository.save(product);
         return productsMapper.toDto(product);
     }

@@ -13,5 +13,4 @@ public interface OrderRepository extends JpaRepository<OrderEntity,Integer> {
     @Query("Select o from OrderEntity o where o.customer = :customer")
     List<OrderEntity> loadAllOrderForCustomerWithItems(@Param("customer") UserEntity customer);
 
-
 }

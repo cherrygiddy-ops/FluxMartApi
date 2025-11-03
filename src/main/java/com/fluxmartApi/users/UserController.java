@@ -1,5 +1,6 @@
 package com.fluxmartApi.users;
 
+import com.fluxmartApi.auth.InvalidTokenException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,8 +19,18 @@ public class UserController {
     }
 
 
+    @GetMapping("/verify")
+    public ResponseEntity<String >verify(@RequestParam String token) {
+     return ResponseEntity.ok(userService.verify(token));
+    }
+
     @ExceptionHandler(UserExistsException.class)
     public ResponseEntity<?> handleUserNotFound() {
         return ResponseEntity.status(HttpStatus.FOUND).body("User Exists");
     }
+    @ExceptionHandler(InvalidTokenException.class)
+    public ResponseEntity<?> handleInvalidToken (){
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Expired  Token");
+    }
+
 }

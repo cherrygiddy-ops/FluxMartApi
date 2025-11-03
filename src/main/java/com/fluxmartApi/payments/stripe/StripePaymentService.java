@@ -8,6 +8,9 @@ import com.fluxmartApi.payments.CheckoutSession;
 import com.fluxmartApi.payments.PaymentException;
 import com.fluxmartApi.payments.PaymentGateway;
 import com.fluxmartApi.payments.PaymentResults;
+import com.fluxmartApi.payments.mpesa.dtos.InternalTransactionStatusRequest;
+import com.fluxmartApi.payments.transactions.TransactionEntity;
+import com.fluxmartApi.payments.transactions.TransactionsRepository;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.stripe.exception.StripeException;
@@ -18,15 +21,18 @@ import com.stripe.net.Webhook;
 import com.stripe.param.checkout.SessionCreateParams;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.util.Date;
 import java.util.Optional;
 
 @RequiredArgsConstructor
-@Service
+@Service("StripePaymentService")
 public class StripePaymentService implements PaymentGateway {
     private final StripeConfig stripeConfig;
+    private final TransactionsRepository transactionsRepository;
     @Value("${websiteUrl}")
     private String websiteUrl;
 
@@ -59,13 +65,30 @@ public class StripePaymentService implements PaymentGateway {
 
             switch (event.getType()) {
                 case "payment_intent.succeeded" -> {
-                        return Optional.of(new PaymentResults(extractOrderIdFromPaymentIntent(payload), PaymentStatus.PAID));
+                   var payloadme= extractMetadataFromPaymentIntent(payload);
+
+                    var transaction = new TransactionEntity();
+                    transaction.setTransactionDate(new Date());
+                    transaction.setTransactionId(payloadme.id);
+                    transaction.setOrderId(Integer.valueOf(payloadme.orderId));
+                    transaction.setPaymentType("STRIPE");
+                    transaction.setAmount(payloadme.amountPaid);
+
+                    // Get total across all records
+                    BigDecimal existingTotal = transactionsRepository.findTotalAmountAcrossAllTransactions();
+                    transaction.setTotalAmount(existingTotal.add(payloadme.amountPaid));
+
+                    transactionsRepository.save(transaction);
+
+
+                    return Optional.of(new PaymentResults(Integer.valueOf(payloadme.orderId), PaymentStatus.PAID));
+
                 }
                 case "payment_intent.payment_failed" ->{
-                    return Optional.of(new PaymentResults(extractOrderIdFromPaymentIntent(payload), PaymentStatus.FAILED));
+                    return Optional.of(new PaymentResults(Integer.valueOf(extractMetadataFromPaymentIntent(payload).orderId), PaymentStatus.FAILED));
                 }
                 case "payment_intent.canceled" ->{
-                    return Optional.of(new PaymentResults(extractOrderIdFromPaymentIntent(payload), PaymentStatus.CANCELLED));
+                    return Optional.of(new PaymentResults(Integer.valueOf(extractMetadataFromPaymentIntent(payload).orderId), PaymentStatus.CANCELLED));
                 }
                 default -> {
                    return Optional.empty();
@@ -77,14 +100,34 @@ public class StripePaymentService implements PaymentGateway {
         }
     }
 
-    public static Integer extractOrderIdFromPaymentIntent(String payload) {
+    @Override
+    public Optional<PaymentResults> confirmStkPushAndUpdateOrder() {
+        return Optional.empty();
+    }
+
+    @Override
+    public Optional<PaymentResults> confirmC2bTransactionAndUpdateOrder(InternalTransactionStatusRequest request) {
+        return Optional.empty();
+    }
+
+    public static PayloadMetaData extractMetadataFromPaymentIntent(String payload) {
         JsonObject root = JsonParser.parseString(payload).getAsJsonObject();
         JsonObject dataObject = root.getAsJsonObject("data").getAsJsonObject("object");
 
+// Deserialize into PaymentIntent
         PaymentIntent intent = ApiResource.GSON.fromJson(dataObject, PaymentIntent.class);
-        System.out.println(intent);
-        return  Integer.valueOf(intent.getMetadata().get("orderId"));
+
+// Extract values
+        String transactionId = intent.getId(); // Stripe's internal transaction ID
+        String orderId = intent.getMetadata().get("orderId"); // Your custom metadata
+        Long amountInCents = intent.getAmount(); // Amount in smallest currency unit
+
+// Convert amount to BigDecimal in KES
+        BigDecimal amount = BigDecimal.valueOf(amountInCents).divide(BigDecimal.valueOf(100));
+
+        return  new PayloadMetaData(transactionId,amount,orderId);
     }
+
 
     private static SessionCreateParams.PaymentIntentData createPaymentIntentData(OrderEntity order) {
         return SessionCreateParams.PaymentIntentData.builder().putMetadata("orderId", order.getOrderId().toString()).build();
@@ -100,7 +143,7 @@ public class StripePaymentService implements PaymentGateway {
     private static SessionCreateParams.LineItem.PriceData createPriceData(OrderItemsEntity item) {
         return SessionCreateParams.LineItem.PriceData.builder()
                 .setCurrency("kes")
-                .setUnitAmountDecimal(item.getUnitPrice().multiply(BigDecimal.valueOf(1000)))
+                .setUnitAmountDecimal(item.getUnitPrice().multiply(BigDecimal.valueOf(100)))
                 .setProductData(createProductData(item)).build();
     }
 

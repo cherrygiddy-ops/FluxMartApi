@@ -3,6 +3,8 @@ package com.fluxmartApi.payments;
 import com.fluxmartApi.auth.UserNotFoundException;
 import com.fluxmartApi.cart.CartNotFoundException;
 import com.fluxmartApi.order.CartEmptyException;
+import com.fluxmartApi.order.OrderNotFoundException;
+import com.fluxmartApi.payments.stripe.CheckoutResponseDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,7 +20,7 @@ public class CheckoutController {
 
     @PostMapping()
     public CheckoutResponseDto checkout(@RequestBody CheckoutRequestDto requestDto){
-            return checkOutService.placeOrder(requestDto.getCartId());
+            return checkOutService.placeOrder(requestDto.getCartId(),requestDto.getPaymentGateway());
     }
 
     @PostMapping("/webhook")
@@ -45,5 +47,20 @@ public class CheckoutController {
     @ExceptionHandler(PaymentException.class)
     public ResponseEntity<?> handlePaymentException (){
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Could Not Create A Checkout Session");
+    }
+
+    @ExceptionHandler(OrderAlreadyUpdatedException.class)
+    public ResponseEntity<?> handleOrderPaidException (){
+        return ResponseEntity.status(HttpStatus.FOUND).body("Order  Already Updated");
+    }
+
+    @ExceptionHandler(OrderNotFoundException.class)
+    public ResponseEntity<?> handleOrderNotFoundException (){
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Order  Not Found");
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<?> handlePaymentServiceNotFoundException (){
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Unsupported payment gateway: ");
     }
 }

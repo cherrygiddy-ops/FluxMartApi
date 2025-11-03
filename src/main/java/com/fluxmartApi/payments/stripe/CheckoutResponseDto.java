@@ -1,4 +1,4 @@
-package com.fluxmartApi.payments;
+package com.fluxmartApi.payments.stripe;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

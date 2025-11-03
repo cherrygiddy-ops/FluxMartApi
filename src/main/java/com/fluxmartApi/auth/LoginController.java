@@ -29,8 +29,12 @@ public class LoginController {
 
     @PostMapping("/login")
     public ResponseEntity<JwtResponseDto> login(@Valid  @RequestBody LoginRequestDto requestDto, HttpServletResponse response){
-        var token = authService.getJwt(requestDto, response);
+        try {
+           var  token = authService.getJwt(requestDto, response);
         return ResponseEntity.ok().body(new JwtResponseDto(token.toString()));
+        } catch (AccountNotVerifiedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
 
@@ -63,6 +67,11 @@ public class LoginController {
     @ExceptionHandler(InvalidTokenException.class)
     public ResponseEntity<?> handleInvalidTokenMatch (){
         return ResponseEntity.status(HttpStatus.OK).body("invalid Tokens");
+    }
+
+    @ExceptionHandler(AccountNotVerifiedException.class)
+    public ResponseEntity<?> handleAccountNotVerified (){
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Please verify your email before logging in.");
     }
 
 }
