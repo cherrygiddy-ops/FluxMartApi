@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @Data
 public class ProductsResponseDto {
@@ -13,5 +14,7 @@ public class ProductsResponseDto {
     private Integer quantity;
     private BigDecimal price;
     private Byte categoryId;
+    private List<ProductImageDto> images;
+
 
 }
