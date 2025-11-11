@@ -30,10 +30,13 @@ public class ProductsController {
     public ProductsResponseDto getProductDetails (@PathVariable(name = "productId") Integer id) {
       return productService.getProductsDetails(id);
     }
-
     @GetMapping()
-    public List<ProductsResponseDto> getALLProducts (@RequestParam(name = "sort", required = false,defaultValue = "") String sortBy){
-        return productService.getAllProducts(sortBy);
+    public List<ProductsResponseDto> getALLProducts (){
+        return productService.getAllProducts();
+    }
+
+    public List<ProductsResponseDto> getSortedProducts (@RequestParam(name = "sort", required = false,defaultValue = "") String sortBy){
+        return productService.getSortedProducts(sortBy);
     }
 
     @GetMapping("/pages")

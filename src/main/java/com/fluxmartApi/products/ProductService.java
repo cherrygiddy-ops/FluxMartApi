@@ -71,7 +71,10 @@ public class ProductService {
          var product = productsRepository.findById(id).orElseThrow(ProductNotFoundException::new);
         return  productsMapper.toDto(product);
      }
-    public List<ProductsResponseDto> getAllProducts(String sortBy) {
+    public List<ProductsResponseDto> getAllProducts() {
+        return productsRepository.findAllWithDetails().stream().map(productsMapper::toDto).toList();
+    }
+    public List<ProductsResponseDto> getSortedProducts(String sortBy) {
         if (!Set.of("categoryId","name","price").contains(sortBy))
             sortBy = "name";
         return productsRepository.findAll(Sort.by(sortBy).descending()).stream().map(productsMapper::toDto).toList();
