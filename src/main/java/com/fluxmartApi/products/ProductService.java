@@ -2,7 +2,9 @@ package com.fluxmartApi.products;
 
 import com.fluxmartApi.categories.CategoryRepository;
 import lombok.RequiredArgsConstructor;
+import org.hibernate.query.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -71,7 +73,8 @@ public class ProductService {
          var product = productsRepository.findById(id).orElseThrow(ProductNotFoundException::new);
         return  productsMapper.toDto(product);
      }
-    public List<ProductsResponseDto> getAllProducts() {
+
+    public List<ProductsResponseDto> getAllProducts(Pageable pageable) {
         return productsRepository.findAllWithDetails().stream().map(productsMapper::toDto).toList();
     }
     public List<ProductsResponseDto> getSortedProducts(String sortBy) {
@@ -121,4 +124,12 @@ public class ProductService {
         return productsMapper.toDto(product);
     }
 
+    public List<ProductsResponseDto> findByCategoryId(Byte categoryId, Pageable pageable) {
+         return productsRepository.findByCategoryId(categoryId).stream().map(productsMapper::toDto).toList();
+    }
+
+
+    public List<ProductsEntity> searchByKeyword(String keyword) {
+        return productsRepository.searchByKeyword(keyword);
+    }
 }

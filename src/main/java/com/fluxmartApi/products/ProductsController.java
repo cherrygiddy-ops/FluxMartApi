@@ -5,6 +5,7 @@ import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.repository.query.Param;
 import org.springframework.http.HttpStatus;
@@ -31,8 +32,27 @@ public class ProductsController {
       return productService.getProductsDetails(id);
     }
     @GetMapping()
-    public List<ProductsResponseDto> getALLProducts (){
-        return productService.getAllProducts();
+    public List<ProductsResponseDto> getALLProducts (@RequestParam(required = false) Byte categoryId,
+                                                     @RequestParam(defaultValue = "0") int pageNumber,
+                                                     @RequestParam(defaultValue = "10") int pageSize,
+                                                     @RequestParam(defaultValue = "id,asc") String sort
+    ){
+        Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by(parseSort(sort)));
+
+        if (categoryId == null) {
+            return productService.getAllProducts(pageable);
+        }
+        return productService.findByCategoryId(categoryId, pageable);
+
+    }
+
+    private Sort.Order parseSort(String sort) {
+        String[] parts = sort.split(",");
+        String property = parts[0];
+        Sort.Direction direction = parts.length > 1 && parts[1].equalsIgnoreCase("desc")
+                ? Sort.Direction.DESC
+                : Sort.Direction.ASC;
+        return new Sort.Order(direction, property);
     }
 
     public List<ProductsResponseDto> getSortedProducts (@RequestParam(name = "sort", required = false,defaultValue = "") String sortBy){
@@ -54,6 +74,12 @@ public class ProductsController {
     public ProductsResponseDto updateProduct(@PathVariable(name = "productId") Integer id,@ModelAttribute UpdateProductRequest request){
         return productService.updateProduct(id,request);
     }
+
+    @GetMapping("/search")
+    public List<ProductsEntity> searchProducts(@RequestParam String keyword) {
+        return productService.searchByKeyword(keyword);
+    }
+
 
     @ExceptionHandler(ProductNotFoundException.class)
     public ResponseEntity<?> handleProductNotFound() {

@@ -3,6 +3,7 @@ package com.fluxmartApi.products;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -14,11 +15,13 @@ public interface ProductsRepository extends JpaRepository<ProductsEntity,Integer
     Optional<ProductsEntity> findById(int id);
     List<ProductsEntity> findTop5OrderByNameLike(String name);
     List<ProductsEntity> findByPriceBetween(BigDecimal min,BigDecimal max);
+    List<ProductsEntity> findByCategoryId(Byte categoryId);
 
     @Query("SELECT  p FROM ProductsEntity p " +
             "JOIN FETCH p.category " +
             "LEFT JOIN FETCH p.images")
     List<ProductsEntity> findAllWithDetails();
 
-
-}
+        @Query("SELECT p FROM ProductsEntity p WHERE LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(p.descriptions) LIKE LOWER(CONCAT('%', :keyword, '%'))")
+        List<ProductsEntity> searchByKeyword(@Param("keyword") String keyword);
+    }
