@@ -35,9 +35,9 @@ public class ProductsController {
     public List<ProductsResponseDto> getALLProducts (@RequestParam(required = false) Byte categoryId,
                                                      @RequestParam(defaultValue = "0") int pageNumber,
                                                      @RequestParam(defaultValue = "10") int pageSize,
-                                                     @RequestParam(defaultValue = "id,asc") String sort
+                                                     @RequestParam(defaultValue = "") String sortBy
     ){
-        Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by(parseSort(sort)));
+        Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by(parseSort(sortBy)));
 
         if (categoryId == null) {
             return productService.getAllProducts(pageable);
@@ -46,8 +46,10 @@ public class ProductsController {
 
     }
 
-    private Sort.Order parseSort(String sort) {
-        String[] parts = sort.split(",");
+    private Sort.Order parseSort(String sortBy) {
+        if (!Set.of("categoryId","name","price").contains(sortBy))
+            sortBy = "name";
+        String[] parts = sortBy.split(",");
         String property = parts[0];
         Sort.Direction direction = parts.length > 1 && parts[1].equalsIgnoreCase("desc")
                 ? Sort.Direction.DESC

@@ -75,7 +75,7 @@ public class ProductService {
      }
 
     public List<ProductsResponseDto> getAllProducts(Pageable pageable) {
-        return productsRepository.findAllWithDetails().stream().map(productsMapper::toDto).toList();
+        return productsRepository.findAll(pageable).stream().map(productsMapper::toDto).toList();
     }
     public List<ProductsResponseDto> getSortedProducts(String sortBy) {
         if (!Set.of("categoryId","name","price").contains(sortBy))
