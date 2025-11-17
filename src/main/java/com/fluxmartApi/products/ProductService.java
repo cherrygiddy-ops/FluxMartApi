@@ -39,19 +39,18 @@ public class ProductService {
 
              var product = productsMapper.toEntity(requestDto);
              product.setCategory(category);
-
-             List<ProductImage> images = new ArrayList<>();
-             for (MultipartFile file : requestDto.getImageFiles()) {
-                 String imagePath = saveImage(file);
-                 ProductImage image = new ProductImage();
-                 image.setImageUrl(imagePath);
-                 image.setProduct(product);
-                 images.add(image);
-             }
-
-             product.setImages(images);
+//
+//             List<ProductImage> images = new ArrayList<>();
+//             for (MultipartFile file : requestDto.getImageFiles()) {
+//                 String imagePath = saveImage(file);
+//                 ProductImage image = new ProductImage();
+//                 image.setImageUrl(imagePath);
+//                 image.setProduct(product);
+//                 images.add(image);
+//             }
+//
+//             product.setImages(images);
              productsRepository.save(product);
-         System.out.println(product);
              return productsMapper.toDto(product);
 
      }
@@ -75,7 +74,7 @@ public class ProductService {
      }
 
     public List<ProductsResponseDto> getAllProducts(Pageable pageable) {
-        return productsRepository.findAll(pageable).stream().map(productsMapper::toDto).toList();
+        return productsRepository.findAllWithDetails(pageable).stream().map(productsMapper::toDto).toList();
     }
     public List<ProductsResponseDto> getSortedProducts(String sortBy) {
         if (!Set.of("categoryId","name","price").contains(sortBy))
@@ -124,12 +123,12 @@ public class ProductService {
         return productsMapper.toDto(product);
     }
 
-    public List<ProductsResponseDto> findByCategoryId(Byte categoryId, Pageable pageable) {
-         return productsRepository.findByCategoryId(categoryId).stream().map(productsMapper::toDto).toList();
+    public List<ProductsResponseDto> findByCategoryId(Byte categoryId, Pageable pageable,String searchBy) {
+         return productsRepository.findAllFilteredAndSortedProducts(categoryId,pageable,searchBy).stream().map(productsMapper::toDto).toList();
     }
 
 
-    public List<ProductsEntity> searchByKeyword(String keyword) {
-        return productsRepository.searchByKeyword(keyword);
+    public List<ProductsResponseDto> searchByKeyword(String keyword) {
+        return productsRepository.searchByKeyword(keyword).stream().map(productsMapper::toDto).toList();
     }
 }

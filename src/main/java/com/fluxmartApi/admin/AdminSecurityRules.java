@@ -12,8 +12,8 @@ public class AdminSecurityRules implements SecurityRules {
     @Override
     public void config(AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry registry) {
         registry.requestMatchers("/admin/users").hasRole(Role.ADMIN.name());
-        registry.requestMatchers(HttpMethod.POST,"/products/**").hasRole(Role.ADMIN.name());
-        registry.requestMatchers(HttpMethod.PUT,"/products/**").hasRole(Role.ADMIN.name());
-        registry.requestMatchers(HttpMethod.DELETE,"/products/**").hasRole(Role.ADMIN.name());
+        registry.requestMatchers(HttpMethod.POST,"/products/**").permitAll();
+        registry.requestMatchers(HttpMethod.PUT,"/products/**").permitAll();
+        registry.requestMatchers(HttpMethod.DELETE,"/products/**").permitAll();
     }
 }

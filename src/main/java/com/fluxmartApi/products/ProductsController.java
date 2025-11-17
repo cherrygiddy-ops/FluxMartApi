@@ -23,7 +23,7 @@ public class ProductsController {
     private final ProductService productService;
 
     @PostMapping
-    public ResponseEntity<?>  addProduct(@Valid @ModelAttribute ProductsRequestDto requestDto){
+    public ResponseEntity<?>  addProduct(@RequestBody ProductsRequestDto requestDto){
        var response= productService.addProduct(requestDto);
        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
@@ -34,21 +34,24 @@ public class ProductsController {
     @GetMapping()
     public List<ProductsResponseDto> getALLProducts (@RequestParam(required = false) Byte categoryId,
                                                      @RequestParam(defaultValue = "0") int pageNumber,
-                                                     @RequestParam(defaultValue = "10") int pageSize,
-                                                     @RequestParam(defaultValue = "") String sortBy
+                                                     @RequestParam(defaultValue = "3") int pageSize,
+                                                     @RequestParam(defaultValue = "name") String sortBy,
+                                                     @RequestParam(defaultValue = "")String keyword
     ){
         Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by(parseSort(sortBy)));
 
-        if (categoryId == null) {
+        if (categoryId == null && keyword ==null) {
             return productService.getAllProducts(pageable);
+        } else if (categoryId == null ){
+            return productService.searchByKeyword(keyword);
         }
-        return productService.findByCategoryId(categoryId, pageable);
+            return productService.findByCategoryId(categoryId, pageable,keyword);
 
     }
 
     private Sort.Order parseSort(String sortBy) {
-        if (!Set.of("categoryId","name","price").contains(sortBy))
-            sortBy = "name";
+//        if (!Set.of("categoryId","name","price").contains(sortBy))
+//            sortBy = "name";
         String[] parts = sortBy.split(",");
         String property = parts[0];
         Sort.Direction direction = parts.length > 1 && parts[1].equalsIgnoreCase("desc")
@@ -77,10 +80,10 @@ public class ProductsController {
         return productService.updateProduct(id,request);
     }
 
-    @GetMapping("/search")
-    public List<ProductsEntity> searchProducts(@RequestParam String keyword) {
-        return productService.searchByKeyword(keyword);
-    }
+//    @GetMapping("/search")
+//    public List<ProductsEntity> searchProducts(@RequestParam String keyword) {
+//        return productService.searchByKeyword(keyword);
+//    }
 
 
     @ExceptionHandler(ProductNotFoundException.class)
