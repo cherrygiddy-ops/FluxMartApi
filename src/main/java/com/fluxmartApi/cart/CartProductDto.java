@@ -9,4 +9,5 @@ public class CartProductDto {
     private Integer id;
     private String name;
     private BigDecimal price=BigDecimal.ZERO;
+    private String imageUrl;
 }
