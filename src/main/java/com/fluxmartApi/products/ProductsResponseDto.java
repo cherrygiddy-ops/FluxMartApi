@@ -14,7 +14,7 @@ public class ProductsResponseDto {
     private Integer quantity;
     private BigDecimal price;
     private Byte categoryId;
-    private List<ProductImageDto> images;
+    private String imageUrl;
 
 
 }

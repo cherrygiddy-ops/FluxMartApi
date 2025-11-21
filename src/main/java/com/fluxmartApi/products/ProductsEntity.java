@@ -36,12 +36,12 @@ public class ProductsEntity {
     @Column(name = "unit_price")
     private BigDecimal price;
 
+    @Column(name = "image_url")
+    private  String imageUrl;
+
     @JoinColumn(name = "category_id")
     @ManyToOne(cascade = CascadeType.PERSIST)
     private CategoryEntity category;
-
-    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL)
-    private List<ProductImage> images = new ArrayList<>();
 
 
 }

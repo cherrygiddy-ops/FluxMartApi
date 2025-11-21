@@ -8,7 +8,9 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        registry.addResourceHandler("/uploads/**")
-                .addResourceLocations("file:uploads/");
-    }
+            // Map URL path /uploads/** to the physical uploads folder
+            registry.addResourceHandler("/uploads/**")
+                    .addResourceLocations("file:uploads/");
+        }
+
 }

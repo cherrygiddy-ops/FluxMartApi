@@ -1,64 +1,67 @@
 package com.fluxmartApi.products;
 
-import com.fluxmartApi.categories.CategoryRepository;
-import jakarta.validation.Valid;
-import lombok.AllArgsConstructor;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.repository.query.Param;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.math.BigDecimal;
+import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/products")
 public class ProductsController {
-   // private final ProductsMapper productsMapper;
     private final ProductService productService;
 
     @PostMapping
-    public ResponseEntity<?>  addProduct(@RequestBody ProductsRequestDto requestDto){
-       var response= productService.addProduct(requestDto);
-       return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    public ResponseEntity<?>  addProduct(@ModelAttribute ProductsRequestDto form) {
+        ProductsRequestDto dto = new ProductsRequestDto();
+        dto.setName(form.getName());
+        dto.setDescriptions(form.getDescriptions());
+        dto.setCategoryId(form.getCategoryId());
+        dto.setPrice(form.getPrice());
+        dto.setQuantity(form.getQuantity());
+
+        var response= productService.addProduct(dto, form.getImage());
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+
     }
+
+    @RequestMapping("/products")
+    public void logHeaders(HttpServletRequest request) {
+        Collections.list(request.getHeaderNames()).forEach(name -> System.out.println(name + ": " + request.getHeader(name)));
+    }
+
     @GetMapping("/{productId}")
     public ProductsResponseDto getProductDetails (@PathVariable(name = "productId") Integer id) {
       return productService.getProductsDetails(id);
     }
+//    @GetMapping("/{productName}")
+//    public ProductsResponseDto getProductDetailsWithName (@PathVariable(name = "productName") String name) {
+//        return productService.getProductsDetailsByName(name);
+//    }
     @GetMapping()
-    public List<ProductsResponseDto> getALLProducts (@RequestParam(required = false) Byte categoryId,
-                                                     @RequestParam(defaultValue = "0") int pageNumber,
-                                                     @RequestParam(defaultValue = "3") int pageSize,
-                                                     @RequestParam(defaultValue = "name") String sortBy,
-                                                     @RequestParam(defaultValue = "")String keyword
-    ){
-        Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by(parseSort(sortBy)));
-
-        if (categoryId == null && keyword ==null) {
-            return productService.getAllProducts(pageable);
-        } else if (categoryId == null ){
-            return productService.searchByKeyword(keyword);
-        }
-            return productService.findByCategoryId(categoryId, pageable,keyword);
-
+    public Page<ProductsResponseDto> getProducts(
+            @RequestParam(defaultValue = "0") int pageNumber,
+            @RequestParam(defaultValue = "10") int pageSize,
+            @RequestParam(required = false) Byte categoryId,
+            @RequestParam(required = false) String sortBy,
+            @RequestParam(required = false) String keyword
+    ) {
+        Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by(sortBy != null ? sortBy : "id"));
+        return productService.searchProducts(categoryId, keyword, pageable);
     }
 
-    private Sort.Order parseSort(String sortBy) {
-//        if (!Set.of("categoryId","name","price").contains(sortBy))
-//            sortBy = "name";
-        String[] parts = sortBy.split(",");
-        String property = parts[0];
-        Sort.Direction direction = parts.length > 1 && parts[1].equalsIgnoreCase("desc")
-                ? Sort.Direction.DESC
-                : Sort.Direction.ASC;
-        return new Sort.Order(direction, property);
-    }
+
 
     public List<ProductsResponseDto> getSortedProducts (@RequestParam(name = "sort", required = false,defaultValue = "") String sortBy){
         return productService.getSortedProducts(sortBy);

@@ -1,8 +1,9 @@
 package com.fluxmartApi.products;
 
 import com.fluxmartApi.categories.CategoryRepository;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.hibernate.query.Page;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -18,6 +19,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -33,48 +35,71 @@ public class ProductService {
     private final ProductsMapper productsMapper;
 
 
-     public ProductsResponseDto  addProduct(ProductsRequestDto requestDto){
+     public ProductsResponseDto  addProduct(ProductsRequestDto requestDto,MultipartFile image){
              var category = categoryRepository.findById(requestDto.getCategoryId())
                      .orElseThrow(CategoryNotFoundException::new);
-
-             var product = productsMapper.toEntity(requestDto);
-             product.setCategory(category);
-//
-//             List<ProductImage> images = new ArrayList<>();
-//             for (MultipartFile file : requestDto.getImageFiles()) {
-//                 String imagePath = saveImage(file);
-//                 ProductImage image = new ProductImage();
-//                 image.setImageUrl(imagePath);
-//                 image.setProduct(product);
-//                 images.add(image);
-//             }
-//
-//             product.setImages(images);
-             productsRepository.save(product);
-             return productsMapper.toDto(product);
-
+             var product = productsMapper.toEntity(requestDto);product.setCategory(category);
+         String imageUrl = saveImage(image);
+         product.setImageUrl(imageUrl);
+         productsRepository.save(product);
+         return productsMapper.toDto(product);
      }
 
-    private String saveImage(MultipartFile file) {
-        try {
-            String folder = "uploads/";
-            String filename = UUID.randomUUID() + "_" + file.getOriginalFilename();
-            Path path = Paths.get(folder + filename);
-            Files.createDirectories(path.getParent());
-            Files.write(path, file.getBytes());
-            return "/uploads/" + filename;
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to save image", e);
+    public String saveImage(MultipartFile file) {
+        String fileName = UUID.randomUUID() + "-" + file.getOriginalFilename();
+        Path uploadPath = Paths.get("uploads");
+
+        if (!Files.exists(uploadPath)) {
+            try {
+                Files.createDirectories(uploadPath);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
+
+        Path filePath = uploadPath.resolve(fileName);
+        try {
+            Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        // Return relative URL for frontend
+        return "/uploads/" + fileName;
     }
+
 
      public ProductsResponseDto getProductsDetails(int id){
          var product = productsRepository.findById(id).orElseThrow(ProductNotFoundException::new);
         return  productsMapper.toDto(product);
      }
+     public ProductsResponseDto getProductsDetailsByName(String name){
+        var product = productsRepository.findByName(name).orElseThrow(ProductNotFoundException::new);
+        return  productsMapper.toDto(product);
+    }
 
-    public List<ProductsResponseDto> getAllProducts(Pageable pageable) {
-        return productsRepository.findAllWithDetails(pageable).stream().map(productsMapper::toDto).toList();
+    public Page<ProductsResponseDto> getAllProducts(Pageable pageable) {
+        return productsRepository.findAll(pageable).map(productsMapper::toDto);
+    }
+    public Page<ProductsResponseDto> findByCategoryId(Byte categoryId, Pageable pageable) {
+        return productsRepository
+                .findByCategoryId(categoryId, pageable)
+                .map(productsMapper::toDto);
+    }
+    public Page<ProductsResponseDto> searchProducts(Byte categoryId, String keyword, Pageable pageable) {
+        Page<ProductsEntity> products;
+
+        if (categoryId != null && keyword != null && !keyword.isBlank()) {
+            products = productsRepository.findByCategoryIdAndNameContainingIgnoreCase(categoryId, keyword, pageable);
+        } else if (categoryId != null) {
+            products = productsRepository.findByCategoryId(categoryId, pageable);
+        } else if (keyword != null && !keyword.isBlank()) {
+            products = productsRepository.findByNameContainingIgnoreCase(keyword, pageable);
+        } else {
+            products = productsRepository.findAll(pageable);
+        }
+
+        return products.map(productsMapper::toDto);
     }
     public List<ProductsResponseDto> getSortedProducts(String sortBy) {
         if (!Set.of("categoryId","name","price").contains(sortBy))
@@ -94,41 +119,27 @@ public class ProductService {
         productsRepository.delete(product);
     }
 
-    public ProductsResponseDto updateProduct( Integer id,UpdateProductRequest request){
-        var category = categoryRepository.findById(request.getCategoryId()).orElse(null);
-        if (category==null) throw new CategoryNotFoundException();
-        var product = productsRepository.findById(id).orElse(null);
-        if (product==null) throw new ProductNotFoundException();
+    @Transactional
+    public ProductsResponseDto updateProduct(Integer id, UpdateProductRequest request) {
+        var category = categoryRepository.findById(request.getCategoryId())
+                .orElseThrow(CategoryNotFoundException::new);
+
+        var product = productsRepository.findById(id)
+                .orElseThrow(ProductNotFoundException::new);
 
         product.setName(request.getName());
         product.setDescriptions(request.getDescriptions());
         product.setQuantity(request.getQuantity());
         product.setPrice(request.getPrice());
+        product.setCategory(category);
 
-        if (request.getImageFiles() != null && !request.getImageFiles().isEmpty()) {
-            product.getImages().clear(); // Remove old images (optional)
-            List<ProductImage> newImages = request.getImageFiles().stream()
-                    .map(file -> {
-                        String path = saveImage(file);
-                        ProductImage img = new ProductImage();
-                        img.setImageUrl(path);
-                        img.setProduct(product);
-                        return img;
-                    })
-                    .collect(Collectors.toList());
-            product.setImages(newImages);
+        if (request.getImage() != null) {
+            String imageUrl = saveImage(request.getImage());
+            product.setImageUrl(imageUrl);
         }
 
         productsRepository.save(product);
         return productsMapper.toDto(product);
     }
 
-    public List<ProductsResponseDto> findByCategoryId(Byte categoryId, Pageable pageable,String searchBy) {
-         return productsRepository.findAllFilteredAndSortedProducts(categoryId,pageable,searchBy).stream().map(productsMapper::toDto).toList();
-    }
-
-
-    public List<ProductsResponseDto> searchByKeyword(String keyword) {
-        return productsRepository.searchByKeyword(keyword).stream().map(productsMapper::toDto).toList();
-    }
 }

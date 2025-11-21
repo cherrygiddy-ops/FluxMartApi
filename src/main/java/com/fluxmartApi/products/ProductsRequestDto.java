@@ -16,7 +16,6 @@ public class ProductsRequestDto {
     private Integer quantity;
     private BigDecimal price;
     private Byte categoryId;
-    List<String> images;
-
+    private MultipartFile image;
 
 }
