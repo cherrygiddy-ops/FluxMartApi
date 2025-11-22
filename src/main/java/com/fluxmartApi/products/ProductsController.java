@@ -50,7 +50,7 @@ public class ProductsController {
 //        return productService.getProductsDetailsByName(name);
 //    }
     @GetMapping()
-    public Page<ProductsResponseDto> getProducts(
+    public ProductPageResponse getProducts(
             @RequestParam(defaultValue = "0") int pageNumber,
             @RequestParam(defaultValue = "10") int pageSize,
             @RequestParam(required = false) Byte categoryId,
@@ -58,7 +58,9 @@ public class ProductsController {
             @RequestParam(required = false) String keyword
     ) {
         Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by(sortBy != null ? sortBy : "id"));
+
         return productService.searchProducts(categoryId, keyword, pageable);
+
     }
 
 

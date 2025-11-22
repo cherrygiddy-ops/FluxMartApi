@@ -86,7 +86,7 @@ public class ProductService {
                 .findByCategoryId(categoryId, pageable)
                 .map(productsMapper::toDto);
     }
-    public Page<ProductsResponseDto> searchProducts(Byte categoryId, String keyword, Pageable pageable) {
+    public ProductPageResponse searchProducts(Byte categoryId, String keyword, Pageable pageable) {
         Page<ProductsEntity> products;
 
         if (categoryId != null && keyword != null && !keyword.isBlank()) {
@@ -99,7 +99,18 @@ public class ProductService {
             products = productsRepository.findAll(pageable);
         }
 
-        return products.map(productsMapper::toDto);
+        Page<ProductsResponseDto> dtoPage = products.map(productsMapper::toDto);
+
+        // Wrap into ProductPage DTO
+        ProductPageResponse response = new ProductPageResponse();
+        response.setContent(dtoPage.getContent());
+        response.setTotalPages(dtoPage.getTotalPages());
+        response.setTotalElements(dtoPage.getTotalElements());
+        response.setPageNumber(dtoPage.getNumber());
+        response.setPageSize(dtoPage.getSize());
+
+        return response;
+
     }
     public List<ProductsResponseDto> getSortedProducts(String sortBy) {
         if (!Set.of("categoryId","name","price").contains(sortBy))
