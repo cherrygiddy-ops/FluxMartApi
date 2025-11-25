@@ -5,7 +5,10 @@ import com.fluxmartApi.cart.CartNotFoundException;
 import com.fluxmartApi.order.CartEmptyException;
 import com.fluxmartApi.order.OrderNotFoundException;
 import com.fluxmartApi.payments.stripe.CheckoutResponseDto;
+import com.fluxmartApi.payments.stripe.StripePaymentService;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,6 +20,7 @@ import java.util.Map;
 @RequestMapping("/checkout")
 public class CheckoutController {
     private final CheckOutService checkOutService;
+    private static final Logger log = LoggerFactory.getLogger(StripePaymentService.class);
 
     @PostMapping()
     public CheckoutResponseDto checkout(@RequestBody CheckoutRequestDto requestDto){
@@ -24,9 +28,10 @@ public class CheckoutController {
     }
 
     @PostMapping("/webhook")
-    public void   handleWebHook(@RequestBody() String payload, @RequestHeader()Map<String,String> singnatureHeader){
-          checkOutService.handleWebhookEvent(new WebhookEventRequest(payload,singnatureHeader));
-
+    public void handleWebHook(@RequestBody String payload,
+                              @RequestHeader("Stripe-Signature") String sigHeader) {
+        log.info("Webhook endpoint hit, payload length={}, signature={}", payload.length(), sigHeader);
+        checkOutService.handleWebhookEvent(new WebhookEventRequest(payload, Map.of("stripe-signature", sigHeader)));
     }
 
     @ExceptionHandler(CartEmptyException.class)
