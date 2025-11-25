@@ -40,9 +40,9 @@ public class CartController {
     }
 
     @DeleteMapping("/{cartId}/items/{productId}")
-    public ResponseEntity<?>deleteCartItem(@PathVariable("cartId") UUID cartId,@PathVariable("productId")Integer productd){
-        cartService.deleteCartItem(cartId,productd);
-        return ResponseEntity.status(HttpStatus.GONE).body("Product Deleted");
+    public ResponseEntity<?>deleteCartItem(@PathVariable("cartId") UUID cartId,@PathVariable("productId")Integer productid){
+        cartService.deleteCartItem(cartId,productid);
+        return ResponseEntity.ok("Product Deleted");
     }
 
     @DeleteMapping("/{cartId}/items")

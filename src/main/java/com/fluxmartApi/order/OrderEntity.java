@@ -51,6 +51,10 @@ public class OrderEntity {
     @OneToOne()
     private PaymentMethod paymentMethod;
 
+    @JoinColumn(name = "cart_id")
+    @ManyToOne
+    private CartEntity cart;
+
     @OneToMany(cascade = {CascadeType.PERSIST,CascadeType.REMOVE} ,mappedBy = "order")
     private Set<OrderItemsEntity> orderItems = new LinkedHashSet<>();
 
@@ -61,6 +65,7 @@ public class OrderEntity {
 
     public static OrderEntity createOrder(CartEntity cart,UserEntity customer){
         var order = new OrderEntity();
+        order.setCart(cart);
         order.setComments("order 1");
         order.setTotalPrice(cart.getTotalPrice());
         order.setCustomer(customer);

@@ -11,27 +11,29 @@ import java.util.Date;
 
 
 public class Jwt {
-    private final Claims claims;
-    private final SecretKey secretKey;
+    private final String token;     // the compact JWT string
+    private final Claims claims;    // decoded claims
 
-    public Jwt(SecretKey secretKey, Claims claims) {
-        this.secretKey = secretKey;
+    public Jwt(String token, Claims claims) {
+        this.token = token;
         this.claims = claims;
     }
 
-    public boolean isExpired(){
-        return claims.getExpiration().after(new Date());
+    public boolean isExpired() {
+        return claims.getExpiration().before(new Date());
     }
 
-    public Integer getUserId(){
-        return  Integer.parseInt(claims.getSubject());
+    public Integer getUserId() {
+        return Integer.parseInt(claims.getSubject());
     }
 
-    public Role getRole(){
-       return Role.valueOf(claims.get("role",String.class));
+    public Role getRole() {
+        return Role.valueOf(claims.get("role", String.class));
     }
 
+    @Override
     public String toString() {
-        return Jwts.builder().claims(claims).signWith(secretKey).compact();
+        return token; // return the original signed token string
     }
+
 }

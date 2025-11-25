@@ -10,5 +10,5 @@ public class CheckoutRequestDto {
     @NotBlank(message = "cartID Required")
     private UUID cartId;
 
-    private String paymentGateway;
+    private String paymentMethod;
 }

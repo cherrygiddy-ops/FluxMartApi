@@ -40,13 +40,17 @@ public class LoginController {
 
     @PostMapping("/refresh")
     public ResponseEntity<?> refreshToken(@CookieValue (value = "refreshToken") String refreshToken){
+        System.out.println("Received refreshToken: " + refreshToken);
         var token=authService.refreshToken(refreshToken);
        return  ResponseEntity.ok(new JwtResponseDto(token.toString()));
     }
 
-    @GetMapping("/currentUser")
     public UserEntity getCurrentUser(){
         return authService.getCurrentUser();
+    }
+    @GetMapping("/currentUser")
+    public CurrentUserResponseDto getCurrentUserResponse(){
+        return authService.getCurrentUserResponse();
     }
 
     @ExceptionHandler(UserNotFoundException.class)

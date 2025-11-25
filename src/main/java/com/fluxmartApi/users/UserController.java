@@ -26,7 +26,7 @@ public class UserController {
 
     @ExceptionHandler(UserExistsException.class)
     public ResponseEntity<?> handleUserNotFound() {
-        return ResponseEntity.status(HttpStatus.FOUND).body("User Exists");
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("User Exists");
     }
     @ExceptionHandler(InvalidTokenException.class)
     public ResponseEntity<?> handleInvalidToken (){

@@ -1,6 +1,5 @@
 package com.fluxmartApi.payments.stripe;
 
-import com.fluxmartApi.order.OrderRepository;
 import com.fluxmartApi.payments.WebhookEventRequest;
 import com.fluxmartApi.order.OrderEntity;
 import com.fluxmartApi.order.OrderItemsEntity;
@@ -14,19 +13,13 @@ import com.fluxmartApi.payments.transactions.TransactionEntity;
 import com.fluxmartApi.payments.transactions.TransactionsRepository;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.stripe.exception.SignatureVerificationException;
 import com.stripe.exception.StripeException;
-import com.stripe.model.Event;
-import com.stripe.model.EventDataObjectDeserializer;
 import com.stripe.model.PaymentIntent;
-import com.stripe.model.StripeObject;
 import com.stripe.model.checkout.Session;
 import com.stripe.net.ApiResource;
 import com.stripe.net.Webhook;
 import com.stripe.param.checkout.SessionCreateParams;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
@@ -38,10 +31,8 @@ import java.util.Optional;
 @RequiredArgsConstructor
 @Service("StripePaymentService")
 public class StripePaymentService implements PaymentGateway {
-    private static final Logger log = LoggerFactory.getLogger(StripePaymentService.class);
     private final StripeConfig stripeConfig;
     private final TransactionsRepository transactionsRepository;
-    private  final OrderRepository orderRepository;
     @Value("${websiteUrl}")
     private String websiteUrl;
 
@@ -65,98 +56,48 @@ public class StripePaymentService implements PaymentGateway {
         }
 }
 
-
-
     @Override
     public Optional<PaymentResults> parseWebhookRequest(WebhookEventRequest request) {
         var payload = request.getPayload();
         var signature = request.getHeaderSignature().get("stripe-signature");
-
         try {
+            var event= Webhook.constructEvent(payload,signature,stripeConfig.getWebhooksecretkey());
+
+            switch (event.getType()) {
+                case "payment_intent.succeeded" -> {
+                   var payloadme= extractMetadataFromPaymentIntent(payload);
+
+                    var transaction = new TransactionEntity();
+                    transaction.setTransactionDate(new Date());
+                    transaction.setTransactionId(payloadme.id);
+                    transaction.setOrderId(Integer.valueOf(payloadme.orderId));
+                    transaction.setPaymentType("STRIPE");
+                    transaction.setAmount(payloadme.amountPaid);
+
+                    // Get total across all records
+                    BigDecimal existingTotal = transactionsRepository.findTotalAmountAcrossAllTransactions();
+                    transaction.setTotalAmount(existingTotal.add(payloadme.amountPaid));
+
+                    transactionsRepository.save(transaction);
 
 
-            log.info("Constructing event with payload size={} and signature={}", payload.length(), signature);
-            Event event = Webhook.constructEvent(payload, signature, stripeConfig.getWebhooksecretkey());
-            log.info("Event constructed successfully: type={}", event.getType());
+                    return Optional.of(new PaymentResults(Integer.valueOf(payloadme.orderId), PaymentStatus.PAID));
 
-            EventDataObjectDeserializer deserializer = event.getDataObjectDeserializer();
-            Optional<StripeObject> stripeObject = deserializer.getObject();
-
-            if (stripeObject.isEmpty()) {
-                String rawJson = deserializer.getRawJson();
-                log.warn("Deserializer empty, rawJson={}", rawJson);
-                if (rawJson != null) {
-                    if (event.getType().startsWith("payment_intent")) {
-                        PaymentIntent intent = ApiResource.GSON.fromJson(rawJson, PaymentIntent.class);
-                        return handlePaymentIntent(event.getType(), intent);
-                    }
-                    if ("checkout.session.completed".equals(event.getType())) {
-                        Session session = ApiResource.GSON.fromJson(rawJson, Session.class);
-                        return handleCheckoutSession(session);
-                    }
                 }
-                return Optional.empty();
+                case "payment_intent.payment_failed" ->{
+                    return Optional.of(new PaymentResults(Integer.valueOf(extractMetadataFromPaymentIntent(payload).orderId), PaymentStatus.FAILED));
+                }
+                case "payment_intent.canceled" ->{
+                    return Optional.of(new PaymentResults(Integer.valueOf(extractMetadataFromPaymentIntent(payload).orderId), PaymentStatus.CANCELLED));
+                }
+                default -> {
+                   return Optional.empty();
+                }
             }
-
-            StripeObject obj = stripeObject.get();
-            if (obj instanceof PaymentIntent intent) {
-                return handlePaymentIntent(event.getType(), intent);
-            }
-            if (obj instanceof Session session) {
-                return handleCheckoutSession(session);
-            }
-
-            return Optional.empty();
-        } catch (SignatureVerificationException e) {
-            log.error("Signature verification failed: {}", e.getMessage());
-            throw new PaymentException("invalid signature");
+        }catch (StripeException ex){
+            System.out.println( ex.getMessage());//logging the exception in a logger service
+            throw new PaymentException("invalid Signature");
         }
-    }
-
-    private Optional<PaymentResults> handlePaymentIntent(String eventType, PaymentIntent intent) {
-        String transactionId = intent.getId();
-        String orderId = intent.getMetadata().get("orderId"); // must match key used when creating PaymentIntent
-        BigDecimal amount = BigDecimal.valueOf(intent.getAmount()).divide(BigDecimal.valueOf(100));
-
-        log.info("Parsed PaymentIntent: id={}, orderId={}, amount={}", transactionId, orderId, amount);
-
-        if (orderId == null) {
-            log.warn("No orderId found in metadata. Cannot update order.");
-            return Optional.empty();
-        }
-
-        switch (eventType) {
-            case "payment_intent.succeeded" -> {
-                TransactionEntity transaction = new TransactionEntity();
-                transaction.setTransactionDate(new Date());
-                transaction.setTransactionId(transactionId);
-                transaction.setOrderId(Integer.valueOf(orderId));
-                transaction.setPaymentType("STRIPE");
-                transaction.setAmount(amount);
-
-                BigDecimal existingTotal = transactionsRepository.findTotalAmountAcrossAllTransactions();
-                transaction.setTotalAmount(existingTotal.add(amount));
-
-                transactionsRepository.save(transaction);
-
-                int updated = orderRepository.updatePaymentStatus(Integer.valueOf(orderId), PaymentStatus.PAID);
-                log.info("Order update result: {} rows updated", updated);
-
-                return Optional.of(new PaymentResults(Integer.valueOf(orderId), PaymentStatus.PAID));
-            }
-            case "payment_intent.payment_failed" ->
-            { return Optional.of(new PaymentResults(Integer.valueOf(orderId), PaymentStatus.FAILED)); }
-            case "payment_intent.canceled" ->
-            { return Optional.of(new PaymentResults(Integer.valueOf(orderId), PaymentStatus.CANCELLED)); }
-            default -> { return Optional.empty(); }
-        }
-    }
-
-    private Optional<PaymentResults> handleCheckoutSession(Session session) {
-        String orderId = session.getMetadata().get("orderId");
-        log.info("Parsed Checkout Session: orderId={}", orderId);
-        orderRepository.updatePaymentStatus(Integer.valueOf(orderId), PaymentStatus.PAID);
-        return Optional.of(new PaymentResults(Integer.valueOf(orderId), PaymentStatus.PAID));
     }
 
     @Override
@@ -169,23 +110,23 @@ public class StripePaymentService implements PaymentGateway {
         return Optional.empty();
     }
 
-//    public static PayloadMetaData extractMetadataFromPaymentIntent(String payload) {
-//        JsonObject root = JsonParser.parseString(payload).getAsJsonObject();
-//        JsonObject dataObject = root.getAsJsonObject("data").getAsJsonObject("object");
-//
-//// Deserialize into PaymentIntent
-//        PaymentIntent intent = ApiResource.GSON.fromJson(dataObject, PaymentIntent.class);
-//
-//// Extract values
-//        String transactionId = intent.getId(); // Stripe's internal transaction ID
-//        String orderId = intent.getMetadata().get("orderId"); // Your custom metadata
-//        Long amountInCents = intent.getAmount(); // Amount in smallest currency unit
-//
-//// Convert amount to BigDecimal in KES
-//        BigDecimal amount = BigDecimal.valueOf(amountInCents).divide(BigDecimal.valueOf(100));
-//
-//        return  new PayloadMetaData(transactionId,amount,orderId);
-//    }
+    public static PayloadMetaData extractMetadataFromPaymentIntent(String payload) {
+        JsonObject root = JsonParser.parseString(payload).getAsJsonObject();
+        JsonObject dataObject = root.getAsJsonObject("data").getAsJsonObject("object");
+
+// Deserialize into PaymentIntent
+        PaymentIntent intent = ApiResource.GSON.fromJson(dataObject, PaymentIntent.class);
+
+// Extract values
+        String transactionId = intent.getId(); // Stripe's internal transaction ID
+        String orderId = intent.getMetadata().get("orderId"); // Your custom metadata
+        Long amountInCents = intent.getAmount(); // Amount in smallest currency unit
+
+// Convert amount to BigDecimal in KES
+        BigDecimal amount = BigDecimal.valueOf(amountInCents).divide(BigDecimal.valueOf(100));
+
+        return  new PayloadMetaData(transactionId,amount,orderId);
+    }
 
 
     private static SessionCreateParams.PaymentIntentData createPaymentIntentData(OrderEntity order) {

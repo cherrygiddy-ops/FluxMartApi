@@ -27,6 +27,7 @@ public class UserService  {
         String token = UUID.randomUUID().toString();
         user.setVerificationToken(token);
         user.setTokenExpiry(LocalDateTime.now().plusHours(24));
+        user.setVerified(true);
         userRepository.save(user);
         //emailService.sendVerificationEmail(email, token);
         return userMapper.toDto(user);

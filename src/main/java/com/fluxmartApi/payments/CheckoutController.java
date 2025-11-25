@@ -24,7 +24,7 @@ public class CheckoutController {
 
     @PostMapping()
     public CheckoutResponseDto checkout(@RequestBody CheckoutRequestDto requestDto){
-            return checkOutService.placeOrder(requestDto.getCartId(),requestDto.getPaymentGateway());
+            return checkOutService.placeOrder(requestDto.getCartId(),requestDto.getPaymentMethod());
     }
 
     @PostMapping("/webhook")

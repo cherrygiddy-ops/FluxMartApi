@@ -6,6 +6,7 @@ import com.fluxmartApi.users.UserEntity;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
 import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -24,33 +25,57 @@ public class JwtService {
         return generateToken(entity, config.getRefreshExpiration());
     }
 
-    private Jwt generateToken(UserEntity entity, int expiration) {
-        var claims = Jwts.claims().subject(entity.getId().toString())
-                .add("name",entity.getUsername())
-                .add("email",entity.getEmail())
-                .add("role",entity.getRole())
-                .expiration(new Date(System.currentTimeMillis() + 1000L * expiration))
+    private Jwt generateToken(UserEntity entity, int expirationSeconds) {
+        String token = Jwts.builder()
+                .subject(entity.getId().toString())
+                .claim("name", entity.getUsername())
+                .claim("email", entity.getEmail())
+                .claim("role", entity.getRole())
                 .issuedAt(new Date())
-                .build();
-        return new Jwt(config.getSecretKey(), claims);
+                .expiration(new Date(System.currentTimeMillis() + 1000L * expirationSeconds))
+                .signWith(config.getSecretKey())
+                .compact();
+
+        Claims claims = Jwts.parser()
+                .verifyWith(config.getSecretKey())
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+
+        return new Jwt(token, claims);
     }
 
-    public Jwt  parseToken(String token){
+    public Jwt parseToken(String token) {
+        if (token == null || token.trim().isEmpty()) {
+            System.out.println("Token is missing or blank");
+            return null;
+        }
+
         try {
-            var claims = getClaims(token);
-           return new Jwt(config.getSecretKey(), claims);
-        }catch (JwtException ex){
+            Claims claims = getClaims(token);
+            System.out.println("Token subject: " + claims.getSubject());
+            return new Jwt(token, claims); // ✅ pass the raw token string + claims
+        } catch (JwtException ex) {
+            System.out.println("Invalid token: " + ex.getMessage());
             return null;
         }
     }
 
     private Claims getClaims(String token) {
-        return Jwts.parser()
-                  .verifyWith(config.getSecretKey())
-                  .build()
-                  .parseSignedClaims(token)
-                  .getPayload();
-    }
+        if (token == null || token.trim().isEmpty()) {
+            throw new IllegalArgumentException("Token is missing or blank");
+        }
 
+        try {
+            return Jwts.parser()
+                    .verifyWith(config.getSecretKey())
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload();
+        } catch (JwtException e) {
+            System.out.println("JWT parsing failed: " + e.getMessage());
+            throw e;
+        }
+    }
 
 }

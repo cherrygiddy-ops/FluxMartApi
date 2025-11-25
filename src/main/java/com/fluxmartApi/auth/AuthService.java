@@ -24,10 +24,22 @@ public class AuthService {
     private final JwtConfig config;
     private final AuthenticationManager authenticationManager;
     private final JwtService service;
+    private  final  LoginMapper loginMapper;
 
     public UserEntity getCurrentUser(){
-        var userId= (Integer)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        var userId = Integer.parseInt(SecurityContextHolder.getContext().getAuthentication().getPrincipal().toString());
          return userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
+    }
+    public CurrentUserResponseDto getCurrentUserResponse() {
+        var principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        if ("anonymousUser".equals(principal)) {
+            throw new UserNotFoundException();
+        }
+
+        var userId = Integer.parseInt(SecurityContextHolder.getContext().getAuthentication().getPrincipal().toString());
+        var user = userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
+        return loginMapper.toDto(user);
     }
     public Jwt getJwt(LoginRequestDto requestDto, HttpServletResponse response) throws AccountNotVerifiedException {
         authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(requestDto.getEmail(), requestDto.getPassword()));
@@ -42,12 +54,16 @@ public class AuthService {
         var token =service.generateAccessTokens(user);
         var refreshToken = service.generateRefreshTokens(user);
 
-        var cookie = new Cookie("refreshToken",refreshToken.toString());
-        cookie.setSecure(true);
-        cookie.setMaxAge(config.getRefreshExpiration());
-        cookie.setPath("/auth/refresh");
+        String refreshTokenValue = refreshToken.toString();
+        String cookieString = String.format(
+                "refreshToken=%s; HttpOnly; Secure; SameSite=None; Path=/; Max-Age=%d",
+                refreshTokenValue,
+                config.getRefreshExpiration()
+        );
+        response.addHeader("Set-Cookie", cookieString);
 
-        response.addCookie(cookie);
+        response.addHeader("Set-Cookie", cookieString);
+
         return token;
     }
 

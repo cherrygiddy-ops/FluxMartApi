@@ -16,7 +16,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Map;
 import java.util.UUID;
 
-
 @RequiredArgsConstructor
 @Service
 public class CheckOutService {
@@ -53,15 +52,14 @@ public class CheckOutService {
 
     }
 
-    public void handleWebhookEvent(WebhookEventRequest request) {
-        System.out.println("Handling webhook event...");
-        paymentGateway.parseWebhookRequest(request)
-                .ifPresent(pr -> {
-                    System.out.println("Updating order {} to status {}"+pr.getOrderId()+pr.getPaymentStatus());
-                    var order = orderRepository.findById(pr.getOrderId()).orElseThrow();
-                    order.setPaymentStatus(pr.getPaymentStatus());
-                    orderRepository.save(order);
-                });
+    public void handleWebhookEvent(WebhookEventRequest request){
+       paymentGateway.parseWebhookRequest(request)
+               .ifPresent(pr-> {
+                           var order = orderRepository.findById(pr.getOrderId()).orElseThrow();
+                           order.setPaymentStatus(pr.getPaymentStatus());
+                           orderRepository.save(order);
+                       }
+                       );
     }
     public void confirmStkPushAndUpdateOrder(){
         paymentGateway.confirmStkPushAndUpdateOrder()
