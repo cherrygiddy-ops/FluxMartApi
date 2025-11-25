@@ -43,7 +43,6 @@ public class CheckOutService {
 
         try {
             var checkoutSession = selectedGateway.createCheckoutSession(order);
-            cartService.clearCart(cartId);
             return new CheckoutResponseDto(order.getOrderId(), checkoutSession.getCheckoutUrl());
         } catch (PaymentException e) {
             orderRepository.delete(order);
@@ -52,14 +51,18 @@ public class CheckOutService {
 
     }
 
-    public void handleWebhookEvent(WebhookEventRequest request){
-       paymentGateway.parseWebhookRequest(request)
-               .ifPresent(pr-> {
-                           var order = orderRepository.findById(pr.getOrderId()).orElseThrow();
-                           order.setPaymentStatus(pr.getPaymentStatus());
-                           orderRepository.save(order);
-                       }
-                       );
+    public void handleWebhookEvent(WebhookEventRequest request) {
+        paymentGateway.parseWebhookRequest(request)
+                .ifPresent(pr -> {
+                    var order = orderRepository.findById(pr.getOrderId()).orElseThrow();
+                    System.out.println("st"+pr.getPaymentStatus());
+                    order.setPaymentStatus(pr.getPaymentStatus());
+                    orderRepository.save(order);
+
+                    if (pr.getPaymentStatus() == PaymentStatus.PAID) {
+                        cartService.clearCart(order.getCart().getId()); // ✅ clear cart only after confirmed payment
+                    }
+                });
     }
     public void confirmStkPushAndUpdateOrder(){
         paymentGateway.confirmStkPushAndUpdateOrder()
@@ -69,6 +72,9 @@ public class CheckOutService {
                                 throw new OrderAlreadyUpdatedException();
                             order.setPaymentStatus(pr.getPaymentStatus());
                             orderRepository.save(order);
+                    if (pr.getPaymentStatus() == PaymentStatus.PAID) {
+                        cartService.clearCart(order.getCart().getId()); // ✅ clear cart only after confirmed payment
+                    }
                         }
                 );
     }
@@ -81,6 +87,9 @@ public class CheckOutService {
                                 throw new OrderAlreadyUpdatedException();
                             order.setPaymentStatus(pr.getPaymentStatus());
                             orderRepository.save(order);
+                    if (pr.getPaymentStatus() == PaymentStatus.PAID) {
+                        cartService.clearCart(order.getCart().getId()); // ✅ clear cart only after confirmed payment
+                    }
                         },  () -> {
                             // Handle the case when the Optional is empty
                             throw new OrderNotFoundException(); // or log, or do nothing
