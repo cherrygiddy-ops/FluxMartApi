@@ -1,12 +1,6 @@
 spring:
   application:
      name: fluxmartApi
-  datasource :
-    url: jdbc:mysql://localhost:3306/sql_store?createDatabaseIfNotExist=true
-    username: root
-    password: Kimz@9600
-  jpa:
-    show-sql: true
   jwt:
     secretKey: ${JWT_SECRET}
     refreshExpiration: 604800
@@ -19,6 +13,8 @@ spring:
       enabled: true
       max-file-size: 20MB
       max-request-size: 20MB
+  profiles:
+    active: dev
 stripe :
   secretKey : ${STRIPE_SECRET_KEY}
   webhooksecretkey: ${STRIPE_WEBHOOK_SECRET_KEY}
@@ -45,11 +41,7 @@ mpesa:
     lnmQueryRequestUrl: https://sandbox.safaricom.co.ke/mpesa/stkpushquery/v1/query
     b2cTransactionEndpoint: https://sandbox.safaricom.co.ke/mpesa/b2c/v3/paymentrequest
     b2cResultUrl: https://ef4c31c2d744.ngrok-free.app/m-pesa/transaction-result
-    b2cQueueTimeoutUrl: https://ef4c31c2d744.ngrok-free.app/m-pesa/b2c-queue-timeout
+    b2cQueueTimeoutUrl: https://ef4c31c2d744.ngrok-free.appapplication.yml/m-pesa/b2c-queue-timeout
     b2cInitiatorName: testapi
     b2cInitiatorPassword: Safaricom123!!
     securityCredentials: olXhRi8gZAHm1SqPTGKzPLDy6aEegM3tHfoE1q58lC11dADuI7dkR8V71TK9MP3R0w63xHxgwCAESWO0krCUjQXonA6TQksc2cLuuZKTLxY2SHux/kSSjtVffAEafmoWod2hGowLzadeLeSLf9WUelhDX+B6NzLH4FOTSavLuyObE2jESnSzNzJvaJejjvTiNpZat0DXYdw7n/uhBuT65EK17s8R626WQDdfGvvlpMJp1FycDz5Z8I5DmGH6ycuSMcByant9lYpO682fUyk7yBqof3P4GSiTP2Edy643bAXLGopX05nHwnqa4y4Et8Yy3ctt7rsPPH3WFSFgipx8rw==
-
-
-
-websiteUrl : http://localhost:5173
