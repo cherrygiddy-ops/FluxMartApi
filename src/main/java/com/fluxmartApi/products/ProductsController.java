@@ -57,7 +57,8 @@ public class ProductsController {
             @RequestParam(required = false) String sortBy,
             @RequestParam(required = false) String keyword
     ) {
-        Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by(sortBy != null ? sortBy : "id"));
+        String sortField = (sortBy != null && !sortBy.isBlank()) ? sortBy : "name";
+        Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by(sortField));
 
         return productService.searchProducts(categoryId, keyword, pageable);
 

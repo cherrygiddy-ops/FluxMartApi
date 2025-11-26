@@ -150,6 +150,10 @@
             <artifactId>stripe-java</artifactId>
             <version>30.0.0</version>
         </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
+        </dependency>
     </dependencies>
 
 

@@ -30,9 +30,13 @@ public class OrderEntity {
     @Column(name = "order_date",insertable = false,updatable = false)
     private LocalDateTime orderDate;
 
-    @Column(name = "status")
+    @Column(name = "payment_status")
     @Enumerated(EnumType.STRING)
     private PaymentStatus paymentStatus;
+
+    @Column(name = "delivery_status")
+    @Enumerated(EnumType.STRING)
+    private DeliveryStatus deliveryStatus;
 
     @Column(name = "comments")
     private String comments;
@@ -40,12 +44,14 @@ public class OrderEntity {
     @Column(name = "shipped_date")
     private Date shippedDate;
 
+    @Column(name = "total_price")
+    private BigDecimal totalPrice;
+
+
     @JoinColumn(name = "shipper_id")
     @OneToOne()
     private Shipper shipper;
 
-    @Column(name = "total_price")
-    private BigDecimal totalPrice;
 
     @JoinColumn(name = "payment_method")
     @OneToOne()
@@ -63,13 +69,14 @@ public class OrderEntity {
         item.setOrder(this);
     }
 
-    public static OrderEntity createOrder(CartEntity cart,UserEntity customer){
+    public static OrderEntity createOrder(CartEntity cart,UserEntity customer,String phoneNumber){
         var order = new OrderEntity();
         order.setCart(cart);
         order.setComments("order 1");
         order.setTotalPrice(cart.getTotalPrice());
         order.setCustomer(customer);
         order.setPaymentStatus(PaymentStatus.PENDING);
+        order.setDeliveryStatus(DeliveryStatus.PROCESSING);
 
         cart.getItems().stream().forEach(cartI -> {
                     var orderItem = new OrderItemsEntity(order,cartI.getProduct(),cartI.getQuantity());

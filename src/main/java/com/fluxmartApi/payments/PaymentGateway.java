@@ -1,7 +1,6 @@
 package com.fluxmartApi.payments;
 
 import com.fluxmartApi.order.OrderEntity;
-import com.fluxmartApi.payments.mpesa.dtos.InternalStkPushRequest;
 import com.fluxmartApi.payments.mpesa.dtos.InternalTransactionStatusRequest;
 
 import java.util.Optional;
@@ -11,7 +10,7 @@ public interface PaymentGateway {
 
     Optional<PaymentResults> parseWebhookRequest(WebhookEventRequest request);
 
-    Optional<PaymentResults> confirmStkPushAndUpdateOrder();
+    void  postTransactions();
 
-    Optional<PaymentResults> confirmC2bTransactionAndUpdateOrder(InternalTransactionStatusRequest request);
+    Optional<PaymentResults> updateOrderAndPostTransactions(InternalTransactionStatusRequest request);
 }

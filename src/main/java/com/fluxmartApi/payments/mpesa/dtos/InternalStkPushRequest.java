@@ -8,9 +8,6 @@ import java.math.BigDecimal;
 @Data
 public class InternalStkPushRequest{
 
-//	@JsonProperty("Amount")
-//	private BigDecimal amount;
-
 	@JsonProperty("PhoneNumber")
-	private String phoneNumber;
+	private String PhoneNumber;
 }

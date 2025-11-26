@@ -51,7 +51,7 @@ public class C2bImpl implements PaymentGateway {
 
     @Override
     public CheckoutSession createCheckoutSession(OrderEntity ordert) {
-        return null;
+        return new CheckoutSession("");
     }
 
     @Override
@@ -60,12 +60,13 @@ public class C2bImpl implements PaymentGateway {
     }
 
     @Override
-    public Optional<PaymentResults> confirmStkPushAndUpdateOrder() {
-        return Optional.empty();
+    public void postTransactions() {
+
     }
 
+
     @Override
-    public Optional<PaymentResults> confirmC2bTransactionAndUpdateOrder(InternalTransactionStatusRequest request) {
+    public Optional<PaymentResults> updateOrderAndPostTransactions(InternalTransactionStatusRequest request) {
         var transactions= b2CC2BEntriesRepository.findByBillRefNumber(request.getBillRefNumber());
         if (!transactions.isEmpty()) {
             BigDecimal existingTotal = transactionsRepository.findTotalAmountAcrossAllTransactions();

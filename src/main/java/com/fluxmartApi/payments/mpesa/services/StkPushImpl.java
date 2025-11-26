@@ -1,6 +1,7 @@
 package com.fluxmartApi.payments.mpesa.services;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fluxmartApi.cart.CartService;
 import com.fluxmartApi.order.OrderEntity;
 import com.fluxmartApi.order.OrderNotFoundException;
 import com.fluxmartApi.order.OrderRepository;
@@ -9,7 +10,6 @@ import com.fluxmartApi.payments.*;
 import com.fluxmartApi.payments.mpesa.config.MpesaConfiguration;
 import com.fluxmartApi.payments.mpesa.dtos.*;
 import com.fluxmartApi.payments.mpesa.entities.StkPush_Entries;
-import com.fluxmartApi.payments.mpesa.repository.B2CC2BEntriesRepository;
 import com.fluxmartApi.payments.mpesa.repository.StkPushEntriesRepository;
 import com.fluxmartApi.payments.mpesa.utils.Constants;
 import com.fluxmartApi.payments.mpesa.utils.HelperUtility;
@@ -46,10 +46,11 @@ public class StkPushImpl implements PaymentGateway {
    private  final CommonServices commonServices;
     private BigDecimal totalPriceFromOrder;
     private String orderNumber;
+    private final CartService cartService;
 
 
 
-    public StkPushSyncResponse performStkPushTransaction(InternalStkPushRequest internalStkPushRequest) {
+    public StkPushSyncResponse initiateStkPushTransaction(InternalStkPushRequest internalStkPushRequest) {
 
         ExternalStkPushRequest externalStkPushRequest = new ExternalStkPushRequest();
         externalStkPushRequest.setBusinessShortCode(mpesaConfiguration.getStkPushShortCode());
@@ -95,7 +96,7 @@ public class StkPushImpl implements PaymentGateway {
 
     }
 
-    public void acknowledgeStkPushResponse(StkPushAsyncResponse callbackRequest) {
+    public void saveStkTransactionsUpdateOrderAndPostTransactions(StkPushAsyncResponse callbackRequest) {
 
         Logger log = LoggerFactory.getLogger(this.getClass());
 
@@ -140,6 +141,15 @@ public class StkPushImpl implements PaymentGateway {
             stkPushEntry.setResultDesc(orderNumber);
 
             stkPushEntriesRepository.save(stkPushEntry);
+            var order = orderRepository.findById(Integer.valueOf(orderNumber)).orElseThrow(OrderNotFoundException::new);
+            if (order.getPaymentStatus()==PaymentStatus.PAID) {
+                cartService.clearCart(order.getCart().getId()); // ✅ clear cart only after confirmed payment
+                throw new OrderAlreadyUpdatedException();
+            }
+            order.setPaymentStatus(PaymentStatus.PAID);
+            orderRepository.save(order);
+
+            postTransactions();
 
             log.info("Successfully processed STK callback for CheckoutRequestID: {}", callback.getCheckoutRequestID());
         } else {
@@ -160,13 +170,10 @@ public class StkPushImpl implements PaymentGateway {
     }
 
     @Override
-    public Optional<PaymentResults> confirmStkPushAndUpdateOrder() {
+    public void postTransactions() {
         var stktransaction= stkPushEntriesRepository.findByResultDesc(orderNumber).orElseThrow(TransactionNotFound::new);
         BigDecimal existingTotal = transactionsRepository.findTotalAmountAcrossAllTransactions();
-        var orderId = stktransaction.getResultDesc();
-        var order = orderRepository.findById(Integer.valueOf(orderId)).orElseThrow(OrderNotFoundException::new);
-        if (order.getPaymentStatus()==PaymentStatus.PAID)
-            throw new OrderAlreadyUpdatedException();
+
         var transaction = new TransactionEntity();
         transaction.setTransactionDate(stktransaction.getEntryDate());
         transaction.setTransactionId(stktransaction.getMpesaReceiptNumber());
@@ -174,14 +181,14 @@ public class StkPushImpl implements PaymentGateway {
         transaction.setPaymentType(stktransaction.getTransactionType());
         transaction.setAmount(stktransaction.getAmount());
         transaction.setTotalAmount(existingTotal.add(stktransaction.getAmount()));
+
         transactionsRepository.save(transaction);
 
-        return Optional.of(new PaymentResults(Integer.valueOf(orderId),PaymentStatus.PAID));
 
     }
 
     @Override
-    public Optional<PaymentResults> confirmC2bTransactionAndUpdateOrder(InternalTransactionStatusRequest request) {
+    public Optional<PaymentResults> updateOrderAndPostTransactions(InternalTransactionStatusRequest request) {
         return Optional.empty();
     }
 

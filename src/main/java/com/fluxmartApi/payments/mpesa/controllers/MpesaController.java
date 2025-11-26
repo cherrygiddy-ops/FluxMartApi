@@ -71,13 +71,13 @@ public class MpesaController {
 
     @PostMapping(path = "/stk-transaction-request", produces = "application/json")
     public ResponseEntity<StkPushSyncResponse> performStkPushTransaction(@RequestBody InternalStkPushRequest internalStkPushRequest) {
-        return ResponseEntity.ok(stkPush.performStkPushTransaction(internalStkPushRequest));
+        return ResponseEntity.ok(stkPush.initiateStkPushTransaction(internalStkPushRequest));
     }
 
     @SneakyThrows
     @PostMapping(path = "/stk-transaction-result", produces = "application/json")
     public ResponseEntity<AcknowledgeResponse> acknowledgeStkPushResponse(@RequestBody StkPushAsyncResponse callbackRequest) {
-        stkPush.acknowledgeStkPushResponse(callbackRequest);
+        stkPush.saveStkTransactionsUpdateOrderAndPostTransactions(callbackRequest);
         return ResponseEntity.ok(acknowledgeResponse);
     }
 

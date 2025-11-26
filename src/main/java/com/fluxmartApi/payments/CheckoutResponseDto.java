@@ -1,4 +1,4 @@
-package com.fluxmartApi.payments.stripe;
+package com.fluxmartApi.payments;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -8,5 +8,5 @@ import lombok.Data;
 public class CheckoutResponseDto {
     private Integer orderId;
     private String stripeCheckoutUrl;
-
+    private String PhoneNumber;
 }

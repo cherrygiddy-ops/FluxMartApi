@@ -9,6 +9,6 @@ import java.util.UUID;
 public class CheckoutRequestDto {
     @NotBlank(message = "cartID Required")
     private UUID cartId;
-
     private String paymentMethod;
+    private String PhoneNumber;
 }

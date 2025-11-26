@@ -111,6 +111,11 @@ public class StripePaymentService implements PaymentGateway {
         return Optional.empty();
     }
 
+    @Override
+    public void postTransactions() {
+
+    }
+
     /**
      * Helper: safely extract PaymentIntent from Event
      */
@@ -139,13 +144,10 @@ public class StripePaymentService implements PaymentGateway {
         return new PayloadMetaData(transactionId, amount, orderId);
     }
 
-    @Override
-    public Optional<PaymentResults> confirmStkPushAndUpdateOrder() {
-        return Optional.empty();
-    }
+
 
     @Override
-    public Optional<PaymentResults> confirmC2bTransactionAndUpdateOrder(InternalTransactionStatusRequest request) {
+    public Optional<PaymentResults> updateOrderAndPostTransactions(InternalTransactionStatusRequest request) {
         return Optional.empty();
     }
 
