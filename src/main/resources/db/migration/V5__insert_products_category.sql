@@ -72,4 +72,9 @@ INSERT INTO sql_store.products (name, descriptions, quantity_in_stock, unit_pric
  ('Conditioner', 'Strengthening hair care', 140, 13.99, 6, 'images/beauty/conditioner.jpg'),
  ('Face Cream', 'Hydrating moisturizer', 100, 29.99, 6, 'images/beauty/facecream.jpg'),
  ('Perfume', 'Floral fragrance', 80, 59.99, 6, 'images/beauty/perfume.jpg'),
- ('Lipstick', 'Matte red shade', 120, 19.99, 6, 'images/
+ ('Lipstick', 'Matte red shade', 120, 19.99, 6, 'images/beauty/lipstick.jpg'),
+ ('Body Lotion', 'Soothing aloe vera formula', 130, 15.99, 6, 'images/beauty/bodylotion.jpg'),
+ ('Hair Oil', 'Nourishing argan oil', 90, 17.99, 6, 'images/beauty/hairoil.jpg'),
+ ('Face Wash', 'Gentle cleanser for all skin types', 110, 11.99, 6, 'images/beauty/facewash.jpg'),
+ ('Deodorant', 'Long-lasting fresh scent', 160, 9.99, 6, 'images/beauty/deodorant.jpg'),
+ ('Makeup Kit', 'Complete set with brushes', 70, 49.99, 6, 'images/beauty/makeupkit.jpg');
