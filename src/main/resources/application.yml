@@ -1,6 +1,12 @@
 spring:
   application:
      name: fluxmartApi
+
+  flyway:
+    enabled: true
+    baselineOnMigrate: true
+    baselineVersion: 1
+    locations: classpath:db/migration
   jwt:
     secretKey: ${JWT_SECRET}
     refreshExpiration: 604800
