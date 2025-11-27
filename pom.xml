@@ -168,22 +168,19 @@
             <plugin>
                 <groupId>org.flywaydb</groupId>
                 <artifactId>flyway-maven-plugin</artifactId>
-                <version>10.12.0</version> <!-- ✅ Downgrade here -->
+                <version>10.12.0</version>
                 <configuration>
-                    <url>jdbc:mysql://root:rhrkcAskejuaLRTtGdDtLTQqBURGCiSA@mysql.railway.internal:3306/railway</url>
+                    <url>jdbc:mysql://localhost:3306/sql_store?createDatabaseIfNotExist=true</url>
                     <user>root</user>
-                    <password>rhrkcAskejuaLRTtGdDtLTQqBURGCiSA</password>
+                    <password>Kimz@9600</password>
                     <cleanDisabled>false</cleanDisabled>
                 </configuration>
                 <dependencies>
                     <dependency>
                         <groupId>com.mysql</groupId>
                         <artifactId>mysql-connector-j</artifactId>
-                        <version>8.0.33</version> <!-- ✅ Add this line -->
-                        <!-- <version>8.0.33</version>  Use the version that matches your DB -->
+                        <version>8.0.33</version>
                     </dependency>
-
-
                 </dependencies>
             </plugin>
 
