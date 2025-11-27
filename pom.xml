@@ -171,8 +171,8 @@
                 <version>10.12.0</version> <!-- ✅ Downgrade here -->
                 <configuration>
                     <url>jdbc:mysql://root:rhrkcAskejuaLRTtGdDtLTQqBURGCiSA@mysql.railway.internal:3306/railway</url>
-<!--                    <user>root</user>-->
-<!--                    <password>Kimz@9600</password>-->
+                    <user>root</user>
+                    <password>rhrkcAskejuaLRTtGdDtLTQqBURGCiSA</password>
                     <cleanDisabled>false</cleanDisabled>
                 </configuration>
                 <dependencies>
