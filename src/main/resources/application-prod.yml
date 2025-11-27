@@ -2,10 +2,8 @@ spring:
   datasource:
     url: ${SPRING_DATASOURCE_URL}
 
-  flyway:
-    enabled: true
-    baselineOnMigrate: true
-    baselineVersion: 1
-    locations: classpath:db/migration
-
+#  flyway:
+#    enabled: true
+#    locations: classpath:db/migration
+#    cleanDisabled: false
 websiteUrl: https://fluxmart.vercel.app

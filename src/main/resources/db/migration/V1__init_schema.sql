@@ -45,9 +45,10 @@ COLLATE = utf8mb4_0900_ai_ci;
 -- Table `sql_store`.`cart`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `sql_store`.`cart` (
-  `id` BINARY(16) NOT NULL DEFAULT uuid_to_bin(uuid()),
-  `created_at` DATE NOT NULL DEFAULT curdate(),
-  PRIMARY KEY (`id`))
+  `id` BINARY(16) NOT NULL,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+)
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8mb4
 COLLATE = utf8mb4_0900_ai_ci;
