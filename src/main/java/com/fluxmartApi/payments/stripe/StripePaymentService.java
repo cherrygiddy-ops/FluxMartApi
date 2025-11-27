@@ -13,9 +13,13 @@ import com.fluxmartApi.payments.transactions.TransactionEntity;
 import com.fluxmartApi.payments.transactions.TransactionsRepository;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.google.gson.JsonSyntaxException;
+import com.stripe.exception.SignatureVerificationException;
 import com.stripe.exception.StripeException;
 import com.stripe.model.Event;
+import com.stripe.model.EventDataObjectDeserializer;
 import com.stripe.model.PaymentIntent;
+import com.stripe.model.StripeObject;
 import com.stripe.model.checkout.Session;
 import com.stripe.net.ApiResource;
 import com.stripe.net.Webhook;
@@ -59,56 +63,69 @@ public class StripePaymentService implements PaymentGateway {
 
     @Override
     public Optional<PaymentResults> parseWebhookRequest(WebhookEventRequest request) {
-        var payload = request.getPayload();
-        var signature = request.getHeaderSignature().get("stripe-signature");
+        String payload = request.getPayload();
+        String sigHeader = request.getHeaderSignature().get("stripe-signature");
+        Event event;
 
         try {
-            var event = Webhook.constructEvent(payload, signature, stripeConfig.getWebhooksecretkey());
-
-            switch (event.getType()) {
-                case "payment_intent.succeeded" -> {
-                    PaymentIntent intent = extractPaymentIntent(event);
-                    if (intent != null) {
-                        var payloadMeta = extractMetadataFromPaymentIntent(intent);
-
-                        var transaction = new TransactionEntity();
-                        transaction.setTransactionDate(new Date());
-                        transaction.setTransactionId(payloadMeta.id);
-                        transaction.setOrderId(Integer.valueOf(payloadMeta.orderId));
-                        transaction.setPaymentType("STRIPE");
-                        transaction.setAmount(payloadMeta.amountPaid);
-
-                        BigDecimal existingTotal = transactionsRepository.findTotalAmountAcrossAllTransactions();
-                        transaction.setTotalAmount(existingTotal.add(payloadMeta.amountPaid));
-
-                        transactionsRepository.save(transaction);
-
-                        return Optional.of(new PaymentResults(Integer.valueOf(payloadMeta.orderId), PaymentStatus.PAID));
-                    }
-                }
-                case "payment_intent.payment_failed" -> {
-                    PaymentIntent intent = extractPaymentIntent(event);
-                    if (intent != null) {
-                        var payloadMeta = extractMetadataFromPaymentIntent(intent);
-                        return Optional.of(new PaymentResults(Integer.valueOf(payloadMeta.orderId), PaymentStatus.FAILED));
-                    }
-                }
-                case "payment_intent.canceled" -> {
-                    PaymentIntent intent = extractPaymentIntent(event);
-                    if (intent != null) {
-                        var payloadMeta = extractMetadataFromPaymentIntent(intent);
-                        return Optional.of(new PaymentResults(Integer.valueOf(payloadMeta.orderId), PaymentStatus.CANCELLED));
-                    }
-                }
-                default -> {
-                    return Optional.empty();
-                }
-            }
-        } catch (StripeException ex) {
-            System.out.println(ex.getMessage()); // log properly in production
-            throw new PaymentException("invalid Signature");
+            // Step 1: Basic JSON deserialization
+            event = ApiResource.GSON.fromJson(payload, Event.class);
+        } catch (JsonSyntaxException e) {
+            // Invalid payload
+            throw new PaymentException("Invalid JSON payload");
         }
-        return Optional.empty();
+
+        // Step 2: Verify signature if secret is defined
+        try {
+            event = Webhook.constructEvent(payload, sigHeader, stripeConfig.getWebhooksecretkey());
+        } catch (SignatureVerificationException e) {
+            throw new PaymentException("Invalid Stripe signature");
+        }
+
+        // Step 3: Safely extract nested object
+        EventDataObjectDeserializer deserializer = event.getDataObjectDeserializer();
+        StripeObject stripeObject = deserializer.getObject().orElse(null);
+
+        if (stripeObject == null) {
+            // Couldn’t deserialize object (API version mismatch, etc.)
+            return Optional.empty();
+        }
+
+        // Step 4: Handle event types
+        switch (event.getType()) {
+            case "payment_intent.succeeded" -> {
+                PaymentIntent intent = (PaymentIntent) stripeObject;
+                var payloadMeta = extractMetadataFromPaymentIntent(intent);
+
+                var transaction = new TransactionEntity();
+                transaction.setTransactionDate(new Date());
+                transaction.setTransactionId(payloadMeta.id);
+                transaction.setOrderId(Integer.valueOf(payloadMeta.orderId));
+                transaction.setPaymentType("STRIPE");
+                transaction.setAmount(payloadMeta.amountPaid);
+
+                BigDecimal existingTotal = transactionsRepository.findTotalAmountAcrossAllTransactions();
+                transaction.setTotalAmount(existingTotal.add(payloadMeta.amountPaid));
+
+                transactionsRepository.save(transaction);
+
+                return Optional.of(new PaymentResults(Integer.valueOf(payloadMeta.orderId), PaymentStatus.PAID));
+            }
+            case "payment_intent.payment_failed" -> {
+                PaymentIntent intent = (PaymentIntent) stripeObject;
+                var payloadMeta = extractMetadataFromPaymentIntent(intent);
+                return Optional.of(new PaymentResults(Integer.valueOf(payloadMeta.orderId), PaymentStatus.FAILED));
+            }
+            case "payment_intent.canceled" -> {
+                PaymentIntent intent = (PaymentIntent) stripeObject;
+                var payloadMeta = extractMetadataFromPaymentIntent(intent);
+                return Optional.of(new PaymentResults(Integer.valueOf(payloadMeta.orderId), PaymentStatus.CANCELLED));
+            }
+            default -> {
+                System.out.println("Unhandled event type: " + event.getType());
+                return Optional.empty();
+            }
+        }
     }
 
     @Override
