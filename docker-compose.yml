@@ -1,0 +1,52 @@
+version: "3.9"
+
+services:
+  web:
+    build: ./FluxMartApp
+    ports:
+      - "5173:5173"
+    env_file:
+      - .env
+    # optional: mount source for live dev, but avoid overwriting node_modules
+    volumes:
+      - ./FluxMartApp:/app
+      - /app/node_modules
+
+  api:
+    build: ./fluxmartApi
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/sql_store?createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true&useSSL=false
+      SPRING_DATASOURCE_USERNAME: fluxmall
+      SPRING_DATASOURCE_PASSWORD: fluxmall@2025
+    depends_on:
+      db:
+        condition: service_healthy
+    # ⚠️ remove volume mount to avoid overwriting app.jar
+    # volumes:
+    #   - ./fluxmartApi:/app
+    entrypoint: ["java","-jar","/app/app.jar"]
+
+  db:
+    image: mysql:8.0
+    container_name: mysql_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: Kimz@9600
+      MYSQL_DATABASE: sql_store
+      MYSQL_USER: fluxmall
+      MYSQL_PASSWORD: fluxmall@2025
+    volumes:
+      - sql_store:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  sql_store:
