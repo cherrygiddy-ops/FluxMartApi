@@ -25,6 +25,10 @@ spring:
 stripe :
   secretKey : ${STRIPE_SECRET_KEY}
   webhooksecretkey: ${STRIPE_WEBHOOK_SECRET_KEY}
+imagekit :
+  urlEndpoint: ${ImageKit_UrlEndpoint}
+  publicKey : ${ImageKit_PublicKey}
+  privateKey : ${ImageKit_PrivateKey}
 
 mpesa:
   daraja:

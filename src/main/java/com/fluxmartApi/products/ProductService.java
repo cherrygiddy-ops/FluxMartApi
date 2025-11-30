@@ -1,18 +1,17 @@
 package com.fluxmartApi.products;
 
 import com.fluxmartApi.categories.CategoryRepository;
+import com.fluxmartApi.imageKit.ImageService;
+import io.imagekit.sdk.ImageKit;
+import io.imagekit.sdk.models.FileCreateRequest;
+import io.imagekit.sdk.models.results.Result;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -20,11 +19,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Service
@@ -33,19 +30,29 @@ public class ProductService {
     private final CategoryRepository categoryRepository;
     private final ProductsRepository productsRepository;
     private final ProductsMapper productsMapper;
+    private  final ImageService imageService;
 
 
      public ProductsResponseDto  addProduct(ProductsRequestDto requestDto,MultipartFile image){
-             var category = categoryRepository.findById(requestDto.getCategoryId())
-                     .orElseThrow(CategoryNotFoundException::new);
-             var product = productsMapper.toEntity(requestDto);product.setCategory(category);
-         String imageUrl = saveImage(image);
-         product.setImageUrl(imageUrl);
+         var category = categoryRepository.findById(requestDto.getCategoryId())
+                 .orElseThrow(CategoryNotFoundException::new);
+
+         var product = productsMapper.toEntity(requestDto);
+         product.setCategory(category);
+
+         try {
+             String imageUrl = imageService.uploadImage(image.getBytes(), image.getOriginalFilename());
+             product.setImageUrl(imageUrl);
+         } catch (Exception e) {
+             throw new RuntimeException("Image upload failed", e);
+         }
+
          productsRepository.save(product);
          return productsMapper.toDto(product);
+
      }
 
-    public String saveImage(MultipartFile file) {
+    public String saveImageLocally(MultipartFile file) {
         String fileName = UUID.randomUUID() + "-" + file.getOriginalFilename();
         Path uploadPath = Paths.get("uploads");
 
@@ -68,8 +75,25 @@ public class ProductService {
         return "/uploads/" + fileName;
     }
 
+    public String saveImageWithImageKit(MultipartFile file) {
+        try {
+            // Generate unique filename
+            String fileName = UUID.randomUUID() + "-" + file.getOriginalFilename();
 
-     public ProductsResponseDto getProductsDetails(int id){
+            // Upload to ImageKit
+            FileCreateRequest request = new FileCreateRequest(file.getBytes(), fileName);
+            Result result = ImageKit.getInstance().upload(request);
+
+            // Return CDN URL instead of local path
+            return result.getUrl();
+        } catch (Exception e) {
+            throw new RuntimeException("Image upload failed", e);
+        }
+    }
+
+
+
+    public ProductsResponseDto getProductsDetails(int id){
          var product = productsRepository.findById(id).orElseThrow(ProductNotFoundException::new);
         return  productsMapper.toDto(product);
      }
@@ -144,9 +168,11 @@ public class ProductService {
         product.setPrice(request.getPrice());
         product.setCategory(category);
 
-        if (request.getImage() != null) {
-            String imageUrl = saveImage(request.getImage());
+        try {
+            String imageUrl = imageService.uploadImage(request.getImage().getBytes(), request.getImage().getOriginalFilename());
             product.setImageUrl(imageUrl);
+        } catch (Exception e) {
+            throw new RuntimeException("Image upload failed", e);
         }
 
         productsRepository.save(product);
